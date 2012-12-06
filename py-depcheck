@@ -41,38 +41,35 @@ class PkgType(object):
 		# XXX: support other PMs than pkgcore
 		return max([cls.from_flag(f) for f in dep._r.use or ('',)])
 
-for r in pm.repositories:
-	for p in r:
-		t = PkgType(p)
-		if t is PkgType.other:
-			continue
+for p in pm.stack:
+	t = PkgType(p)
+	if t is PkgType.other:
+		continue
 
-		def check_dep(dep):
-			if isinstance(dep, PMAtom):
-				dep_type = PkgType.from_dep(dep)
-				if dep_type == PkgType.other:
-					return
+	def check_dep(dep):
+		if isinstance(dep, PMAtom):
+			dep_type = PkgType.from_dep(dep)
+			if dep_type == PkgType.other:
+				return
 
-				pkgs = list(r.filter(dep))
-				if not pkgs:
-					print('%s: no package matches %s' % (p, dep))
-					return
+			pkgs = list(pm.stack.filter(dep))
+			if not pkgs:
+				print('%s: no package matches %s' % (p, dep))
+				return
 
-				dep_pkg_type = max([PkgType(x) for x in pkgs])
-				if dep_type >= dep_pkg_type:
-					return
+			dep_pkg_type = max([PkgType(x) for x in pkgs])
+			if dep_type >= dep_pkg_type:
+				return
 
-				if dep_type is PkgType.multi:
-					print('%s: must not depend on python-single-r1 pkg %s' % (p, dep))
-				elif dep_type is PkgType.other:
-					print('%s: needs PYTHON_USEDEP on %s' % (p, dep))
-				else:
-					raise AssertionError('Unknown bad dep?')
+			if dep_type is PkgType.multi:
+				print('%s: must not depend on python-single-r1 pkg %s' % (p, dep))
+			elif dep_type is PkgType.other:
+				print('%s: needs PYTHON_USEDEP on %s' % (p, dep))
 			else:
-				for dp in dep:
-					check_dep(dp)
+				raise AssertionError('Unknown bad dep?')
+		else:
+			for dp in dep:
+				check_dep(dp)
 
-		for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
-			check_dep(d)
-
-		break
+	for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
+		check_dep(d)
