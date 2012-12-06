@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 from gentoopm.pkgcorepm import PkgCorePM
-
-from gentoopm.basepm.atom import PMAtom
+from gentoopm.pkgcorepm.atom import PkgCoreAtom
 
 pm = PkgCorePM()
 
@@ -47,10 +46,13 @@ for p in pm.stack:
 		continue
 
 	def check_dep(dep):
-		if isinstance(dep, PMAtom):
+		if isinstance(dep, PkgCoreAtom):
 			dep_type = PkgType.from_dep(dep)
 			if dep_type == PkgType.other:
 				return
+
+			# USE deps cause problems with matching, strip them
+			dep = PkgCoreAtom(str(dep).partition('[')[0])
 
 			pkgs = list(pm.stack.filter(dep))
 			if not pkgs:
