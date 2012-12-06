@@ -7,16 +7,25 @@ pm = PkgCorePM()
 
 class PkgType(object):
 	class other(object):
-		def __hash__(self):
-			return 0
+		def __gt__(self, other):
+			return False
+
+		def __ge__(self, other):
+			return other is PkgType.other
 
 	class multi(object):
-		def __hash__(self):
-			return 1
+		def __gt__(self, other):
+			return other is PkgType.other
+
+		def __ge__(self, other):
+			return other is PkgType.other or other is PkgType.multi
 
 	class single(object):
-		def __hash__(self):
-			return 2
+		def __gt__(self, other):
+			return other is not PkgType.single
+
+		def __ge__(self, other):
+			return True
 
 	def __new__(cls, pkg):
 		if 'python-r1' in pkg.inherits:
