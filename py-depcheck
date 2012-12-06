@@ -8,11 +8,16 @@ pm = PkgCorePM()
 
 class PkgType(object):
 	class other(object):
-		pass
+		def __hash__(self):
+			return 0
+
 	class multi(object):
-		pass
+		def __hash__(self):
+			return 1
+
 	class single(object):
-		pass
+		def __hash__(self):
+			return 2
 
 	def __new__(cls, pkg):
 		if 'python-r1' in pkg.inherits:
@@ -22,6 +27,20 @@ class PkgType(object):
 		else:
 			return cls.other
 
+	@classmethod
+	def from_flag(cls, f):
+		if f.startswith('python_targets'):
+			return cls.multi
+		elif f.startswith('python_single_target'):
+			return cls.single
+		else:
+			return cls.other
+
+	@classmethod
+	def from_dep(cls, dep):
+		# XXX: support other PMs than pkgcore
+		return max([cls.from_flag(f) for f in dep._r.use or ('',)])
+
 for r in pm.repositories:
 	for p in r:
 		t = PkgType(p)
@@ -30,13 +49,25 @@ for r in pm.repositories:
 
 		def check_dep(dep):
 			if isinstance(dep, PMAtom):
-				# XXX: support other PMs than pkgcore
-				if not dep._r.use:
-					for x in r.filter(dep):
-						dt = PkgType(x)
+				dep_type = PkgType.from_dep(dep)
+				if dep_type == PkgType.other:
+					return
 
-						if dt is not PkgType.other:
-							print('%s: %s [lacks PYTHON_USEDEP]' % (p, dep))
+				pkgs = list(r.filter(dep))
+				if not pkgs:
+					print('%s: no package matches %s' % (p, dep))
+					return
+
+				dep_pkg_type = max([PkgType(x) for x in pkgs])
+				if dep_type >= dep_pkg_type:
+					return
+
+				if dep_type is PkgType.multi:
+					print('%s: must not depend on python-single-r1 pkg %s' % (p, dep))
+				elif dep_type is PkgType.other:
+					print('%s: needs PYTHON_USEDEP on %s' % (p, dep))
+				else:
+					raise AssertionError('Unknown bad dep?')
 			else:
 				for dp in dep:
 					check_dep(dp)
