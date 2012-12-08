@@ -55,7 +55,7 @@ for p in pm.stack:
 					return
 
 			# USE deps cause problems with matching, strip them
-			dep = dep.__class__(str(dep).partition('[')[0])
+			dep = pm.Atom(str(dep).partition('[')[0])
 
 			try:
 				dep_pkg = pm.stack.select(dep)
