@@ -21,12 +21,18 @@ class PkgType(object):
 		def __gt__(self, other):
 			return True
 
-	def __new__(cls, pkg):
+	def __new__(cls, pkg, curr_pkg = None):
 		# excludes
 		if pkg.key in ('dev-lang/python',
 				'dev-python/pypy',
 				'dev-java/jython'):
 			return cls.other
+
+		if curr_pkg is not None:
+			if 'git-2' in curr_pkg.inherits and pkg.key == 'dev-vcs/git':
+				return cls.other
+			elif 'subversion' in curr_pkg.inherits and pkg.key == 'dev-vcs/subversion':
+				return cls.other
 
 		if 'python-r1' in pkg.inherits:
 			return cls.python_r1
@@ -41,13 +47,13 @@ output = {}
 
 print('[note: each package is listed at most once]')
 
-def process(pkgs):
+def process(pkgs, assume_r1 = False):
 	for p in pkgs:
 		t = PkgType(p)
-		if t is not PkgType.python_r1:
+		if not assume_r1 and t is not PkgType.python_r1:
 			continue
 
-		def check_dep(dep, depth = 0, was_first = [True]):
+		def check_dep(dep, depth = 0, was_first = [True], curr_pkg = p):
 			if isinstance(dep, PMAtom):
 				if dep.blocking:
 					return
@@ -66,7 +72,7 @@ def process(pkgs):
 	#				print('%s: no package matches %s' % (p, dep))
 					return
 
-				if PkgType(dep_pkg) is PkgType.python:
+				if PkgType(dep_pkg, curr_pkg) is PkgType.python:
 					if was_first[0]:
 						print('%s' % p)
 						was_first[0] = False
@@ -77,10 +83,10 @@ def process(pkgs):
 					for d in (dep_pkg.run_dependencies,
 							dep_pkg.build_dependencies,
 							dep_pkg.post_dependencies):
-						check_dep(d, depth + 1, was_first)
+						check_dep(d, depth + 1, was_first, dep_pkg)
 			else:
 				for dp in dep:
-					check_dep(dp, depth, was_first)
+					check_dep(dp, depth, was_first, curr_pkg)
 
 		for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
 			check_dep(d)
@@ -89,7 +95,7 @@ if len(sys.argv) == 1:
 	process(pm.stack)
 else:
 	for pkg in sys.argv[1:]:
-		process(pm.stack.filter(pkg))
+		process(pm.stack.filter(pkg), True)
 
 print('Statistics:')
 for p, count in sorted(output.items(), key = lambda x: x[1]):
