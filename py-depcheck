@@ -57,7 +57,7 @@ for p in pm.stack:
 	def check_dep(dep):
 		if isinstance(dep, PkgCoreAtom):
 			dep_type = PkgType.from_dep(dep)
-			if dep_type == PkgType.other:
+			if dep_type != PkgType.other:
 				return
 
 			# USE deps cause problems with matching, strip them
