@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+
+from gentoopm import get_package_manager
+from gentoopm.basepm.atom import PMAtom
+from gentoopm.exceptions import EmptyPackageSetError
+
+pm = get_package_manager()
+
+class PkgType(object):
+	class other(object):
+		def __gt__(self, other):
+			return False
+
+	class python(object):
+		def __gt__(self, other):
+			return other is PkgType.other
+
+	class python_r1(object):
+		def __gt__(self, other):
+			return True
+
+	def __new__(cls, pkg):
+		# excludes
+		if pkg.key in ('dev-lang/python',
+				'dev-python/pypy',
+				'dev-java/jython'):
+			return cls.other
+
+		if 'python-r1' in pkg.inherits:
+			return cls.python_r1
+		elif 'python-single-r1' in pkg.inherits:
+			return cls.python_r1
+		elif 'python' in pkg.inherits:
+			return cls.python
+		else:
+			return cls.other
+
+output = {}
+
+print('[note: each package is listed at most once]')
+
+for p in pm.stack:
+	t = PkgType(p)
+	if t is not PkgType.python_r1:
+		continue
+
+	def check_dep(dep, depth = 0, was_first = [True]):
+		if isinstance(dep, PMAtom):
+			for p2 in output.keys():
+				if p2 in dep:
+					# avoid infinite loops
+					output[p2] += 1
+					return
+
+			# USE deps cause problems with matching, strip them
+			dep = dep.__class__(str(dep).partition('[')[0])
+
+			try:
+				dep_pkg = pm.stack.select(dep)
+			except EmptyPackageSetError:
+#				print('%s: no package matches %s' % (p, dep))
+				return
+
+			if PkgType(dep_pkg) is PkgType.python:
+				if was_first[0]:
+					print('%s' % p)
+					was_first[0] = False
+				print('%s%s' % ('    ' * (depth + 1), dep))
+
+				output[dep_pkg] = 1
+
+				for d in (dep_pkg.run_dependencies,
+						dep_pkg.build_dependencies,
+						dep_pkg.post_dependencies):
+					check_dep(d, depth + 1, was_first)
+		else:
+			for dp in dep:
+				check_dep(dp, depth, was_first)
+
+	for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
+		check_dep(d)
+
+print('Statistics:')
+for p, count in sorted(output.items(), key = lambda x: x[1]):
+	print(' %4d %s' % (count, p))
