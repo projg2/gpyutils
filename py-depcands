@@ -46,6 +46,8 @@ for p in pm.stack:
 
 	def check_dep(dep, depth = 0, was_first = [True]):
 		if isinstance(dep, PMAtom):
+			if dep.blocking:
+				return
 			for p2 in output.keys():
 				if p2 in dep:
 					# avoid infinite loops

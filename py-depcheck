@@ -56,6 +56,8 @@ for p in pm.stack:
 
 	def check_dep(dep):
 		if isinstance(dep, PkgCoreAtom):
+			if dep.blocking:
+				return
 			dep_type = PkgType.from_dep(dep)
 			if dep_type != PkgType.other:
 				return
