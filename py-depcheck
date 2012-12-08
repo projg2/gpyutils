@@ -54,9 +54,12 @@ for p in pm.stack:
 	if t is PkgType.other:
 		continue
 
+	listed_deps = []
 	def check_dep(dep):
 		if isinstance(dep, PkgCoreAtom):
 			if dep.blocking:
+				return
+			if dep in listed_deps:
 				return
 			dep_type = PkgType.from_dep(dep)
 			if dep_type != PkgType.other:
@@ -80,6 +83,8 @@ for p in pm.stack:
 				print('%s: needs PYTHON_USEDEP on %s' % (p, dep))
 			else:
 				raise AssertionError('Unknown bad dep?')
+
+			listed_deps.append(dep)
 		else:
 			for dp in dep:
 				check_dep(dp)
