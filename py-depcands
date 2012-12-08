@@ -4,6 +4,8 @@ from gentoopm.pkgcorepm import PkgCorePM
 from gentoopm.basepm.atom import PMAtom
 from gentoopm.exceptions import EmptyPackageSetError
 
+import sys
+
 pm = PkgCorePM()
 
 class PkgType(object):
@@ -39,48 +41,55 @@ output = {}
 
 print('[note: each package is listed at most once]')
 
-for p in pm.stack:
-	t = PkgType(p)
-	if t is not PkgType.python_r1:
-		continue
+def process(pkgs):
+	for p in pkgs:
+		t = PkgType(p)
+		if t is not PkgType.python_r1:
+			continue
 
-	def check_dep(dep, depth = 0, was_first = [True]):
-		if isinstance(dep, PMAtom):
-			if dep.blocking:
-				return
-			for p2 in output.keys():
-				if p2 in dep:
-					# avoid infinite loops
-					output[p2] += 1
+		def check_dep(dep, depth = 0, was_first = [True]):
+			if isinstance(dep, PMAtom):
+				if dep.blocking:
+					return
+				for p2 in output.keys():
+					if p2 in dep:
+						# avoid infinite loops
+						output[p2] += 1
+						return
+
+				# USE deps cause problems with matching, strip them
+				dep = pm.Atom(str(dep).partition('[')[0])
+
+				try:
+					dep_pkg = pm.stack.select(dep)
+				except EmptyPackageSetError:
+	#				print('%s: no package matches %s' % (p, dep))
 					return
 
-			# USE deps cause problems with matching, strip them
-			dep = pm.Atom(str(dep).partition('[')[0])
+				if PkgType(dep_pkg) is PkgType.python:
+					if was_first[0]:
+						print('%s' % p)
+						was_first[0] = False
+					print('%s%s' % ('    ' * (depth + 1), dep))
 
-			try:
-				dep_pkg = pm.stack.select(dep)
-			except EmptyPackageSetError:
-#				print('%s: no package matches %s' % (p, dep))
-				return
+					output[dep_pkg] = 1
 
-			if PkgType(dep_pkg) is PkgType.python:
-				if was_first[0]:
-					print('%s' % p)
-					was_first[0] = False
-				print('%s%s' % ('    ' * (depth + 1), dep))
+					for d in (dep_pkg.run_dependencies,
+							dep_pkg.build_dependencies,
+							dep_pkg.post_dependencies):
+						check_dep(d, depth + 1, was_first)
+			else:
+				for dp in dep:
+					check_dep(dp, depth, was_first)
 
-				output[dep_pkg] = 1
+		for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
+			check_dep(d)
 
-				for d in (dep_pkg.run_dependencies,
-						dep_pkg.build_dependencies,
-						dep_pkg.post_dependencies):
-					check_dep(d, depth + 1, was_first)
-		else:
-			for dp in dep:
-				check_dep(dp, depth, was_first)
-
-	for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
-		check_dep(d)
+if len(sys.argv) == 1:
+	process(pm.stack)
+else:
+	for pkg in sys.argv[1:]:
+		process(pm.stack.filter(pkg))
 
 print('Statistics:')
 for p, count in sorted(output.items(), key = lambda x: x[1]):

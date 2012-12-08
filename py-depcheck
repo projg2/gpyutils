@@ -3,6 +3,8 @@
 from gentoopm.pkgcorepm import PkgCorePM
 from gentoopm.pkgcorepm.atom import PkgCoreAtom
 
+import sys
+
 pm = PkgCorePM()
 
 class PkgType(object):
@@ -49,45 +51,52 @@ class PkgType(object):
 		# XXX: support other PMs than pkgcore
 		return max([cls.from_flag(f) for f in dep._r.use or ('',)])
 
-for p in pm.stack:
-	t = PkgType(p)
-	if t is PkgType.other:
-		continue
+def process(pkgs):
+	for p in pkgs:
+		t = PkgType(p)
+		if t is PkgType.other:
+			continue
 
-	listed_deps = []
-	def check_dep(dep):
-		if isinstance(dep, PkgCoreAtom):
-			if dep.blocking:
-				return
-			if dep in listed_deps:
-				return
-			dep_type = PkgType.from_dep(dep)
-			if dep_type != PkgType.other:
-				return
+		listed_deps = []
+		def check_dep(dep):
+			if isinstance(dep, PkgCoreAtom):
+				if dep.blocking:
+					return
+				if dep in listed_deps:
+					return
+				dep_type = PkgType.from_dep(dep)
+				if dep_type != PkgType.other:
+					return
 
-			# USE deps cause problems with matching, strip them
-			dep = pm.Atom(str(dep).partition('[')[0])
+				# USE deps cause problems with matching, strip them
+				dep = pm.Atom(str(dep).partition('[')[0])
 
-			pkgs = list(pm.stack.filter(dep))
-			if not pkgs:
-				print('%s: no package matches %s' % (p, dep))
-				return
+				pkgs = list(pm.stack.filter(dep))
+				if not pkgs:
+					print('%s: no package matches %s' % (p, dep))
+					return
 
-			dep_pkg_type = max([PkgType(x) for x in pkgs])
-			if dep_type >= dep_pkg_type:
-				return
+				dep_pkg_type = max([PkgType(x) for x in pkgs])
+				if dep_type >= dep_pkg_type:
+					return
 
-			if dep_type is PkgType.multi:
-				print('%s: must not depend on python-single-r1 pkg %s' % (p, dep))
-			elif dep_type is PkgType.other:
-				print('%s: needs PYTHON_USEDEP on %s' % (p, dep))
+				if dep_type is PkgType.multi:
+					print('%s: must not depend on python-single-r1 pkg %s' % (p, dep))
+				elif dep_type is PkgType.other:
+					print('%s: needs PYTHON_USEDEP on %s' % (p, dep))
+				else:
+					raise AssertionError('Unknown bad dep?')
+
+				listed_deps.append(dep)
 			else:
-				raise AssertionError('Unknown bad dep?')
+				for dp in dep:
+					check_dep(dp)
 
-			listed_deps.append(dep)
-		else:
-			for dp in dep:
-				check_dep(dp)
+		for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
+			check_dep(d)
 
-	for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
-		check_dep(d)
+if len(sys.argv) == 1:
+	process(pm.stack)
+else:
+	for pkg in sys.argv[1:]:
+		process(pm.stack.filter(pkg))
