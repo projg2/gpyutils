@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-from gentoopm.pkgcorepm import PkgCorePM
+from gentoopm import get_package_manager
 from gentoopm.basepm.atom import PMAtom
 from gentoopm.exceptions import EmptyPackageSetError
 
 import sys
 
-pm = PkgCorePM()
+pm = get_package_manager()
 
 class PkgType(object):
 	class other(object):
