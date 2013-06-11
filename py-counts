@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+# Count migrated packages and packages to migrate.
+# Synopsis: ./py-counts > counts.css
+
+from gentoopm import get_package_manager
+from gentoopm.basepm.atom import PMAtom
+
+import sys
+
+pm = get_package_manager()
+
+def has_python_in_deptree(dep):
+	for d in dep:
+		res = False
+
+		if isinstance(d, PMAtom):
+			res = d.key == 'dev-lang/python'
+		else:
+			res = has_python_in_deptree(d)
+
+		if res:
+			return res
+	return False
+
+def process(pkgs):
+	prev_key = None
+
+	counts = {
+		# new-name: [old, new]
+		'distutils-r1': [0, 0],
+		'python-r1': [0, 0],
+		'python-single-r1': [0, 0],
+		'python-any-r1': [0, 0]
+	}
+
+	for p in reversed(list(pkgs.sorted)):
+		if p.key != prev_key:
+			prev_key = p.key
+
+			for eclass in counts:
+				if eclass in p.inherits:
+					counts[eclass][1] += 1
+					break
+			else:
+				if 'distutils' in p.inherits:
+					counts['distutils-r1'][0] += 1
+				elif 'python' in p.inherits:
+					if p.environ['SUPPORT_PYTHON_ABIS']:
+						counts['python-r1'][0] += 1
+					else:
+						counts['python-single-r1'][0] += 1
+				elif has_python_in_deptree(p.build_dependencies) \
+						and not has_python_in_deptree(p.run_dependencies):
+					counts['python-any-r1'][0] += 1
+
+#	for eclass, n in counts.items():
+#		old, new = n
+#		sum = old + new
+#		perc = 100*new/sum
+#
+#		print('%16s: [%3d%%] %4d/%4d converted (%4d left)'
+#				% (eclass, perc, new, sum, old))
+
+	for eclass, n in counts.items():
+		old, new = n
+		sum = old + new
+		perc = 100*new/sum
+
+		print('')
+		print('/* %s */' % eclass)
+		for key, val in (('old', old), ('new', new),
+				('all', sum), ('perc', perc)):
+			# stupid firefox can't handle content without pseudo-selectors
+			print("#%s-%s:before { content: '%d'; }" % (eclass, key, val))
+		print('#%s-bar { width: %d%%; }' % (eclass, perc))
+
+if len(sys.argv) == 1:
+	process(pm.repositories['gentoo'])
+else:
+	for pkg in sys.argv[1:]:
+		process(pm.stack.filter(pkg))

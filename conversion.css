@@ -1,0 +1,65 @@
+html, body
+{
+	margin: 0;
+	padding: 0;
+}
+
+p, dl, address
+{
+	margin: 1em auto;
+	max-width: 48em;
+}
+
+h1
+{
+	text-align: center;
+
+	background: #000;
+	color: #fff;
+
+	padding: 1em;
+}
+
+dt
+{
+	margin-top: 1em;
+	margin-left: 3em;
+
+	font-weight: bold;
+	font-style: italic;
+}
+
+dd
+{
+	margin: 0;
+
+	padding-bottom: 2em;
+
+	background: #faa;
+	width: 100%;
+
+	text-align: center;
+	font-style: italic;
+
+	line-height: 2;
+}
+
+.progressbar
+{
+	background: #afa;
+}
+
+.progressbar:before
+{
+	content: '\a0';
+}
+
+.text
+{
+	margin: -2em;
+}
+
+address
+{
+	margin-top: 2em;
+}
