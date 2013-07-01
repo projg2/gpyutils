@@ -7,32 +7,51 @@ import sys
 pm = get_package_manager()
 
 mapping = {
-	'python_targets_python2_5': '2.5',
-	'python_targets_python2_6': '2.6',
-	'python_targets_python2_7': '2.7',
-	'python_targets_python3_1': '3.1',
-	'python_targets_python3_2': '3.2',
-	'python_targets_python3_3': '3.3',
-	'python_targets_pypy1_8': 'p1.8',
-	'python_targets_pypy1_9': 'p1.9',
-	'python_targets_pypy2_0': 'p2.0',
-	'python_targets_jython2_5': 'j2.5'
+	'python2_5': '2.5',
+	'python2_6': '2.6',
+	'python2_7': '2.7',
+	'python3_1': '3.1',
+	'python3_2': '3.2',
+	'python3_3': '3.3',
+	'pypy1_8': 'p1.8',
+	'pypy1_9': 'p1.9',
+	'pypy2_0': 'p2.0',
+	'jython2_5': 'j2.5',
+}
+
+p_eclass_mapping = {
+	'2.7-pypy-1.8': 'p1.8',
+	'2.7-pypy-1.9': 'p1.9',
+	'2.7-pypy-2.0': 'p2.0',
+	'2.5-jython': 'j2.5',
 }
 
 keys = sorted(mapping.values())
 
 def process(pkgs):
 	for p in pkgs.sorted:
-		if 'python-r1' in p.inherits or 'python-single-r1' in p.inherits \
-				or 'python-distutils-ng' in p.inherits:
+		p_r1 = any([x in p.inherits for x in ('python-r1', 'python-any-r1',
+				'python-single-r1', 'python-distutils-ng')])
+		p_r0 = 'python' in p.inherits
 
-			output = [' ' * len(x) for x in keys]
+		output = [' ' * len(x) for x in keys]
 
-			for f in p.use:
-				if f in mapping:
-					output[keys.index(mapping[f])] = mapping[f]
+		if p_r1:
+			impls = [mapping[x] for x
+					in p.environ['PYTHON_COMPAT[*]'].split()]
+		elif p_r0:
+			impls = set(keys)
+			for x in p.environ['RESTRICT_PYTHON_ABIS'].split():
+				if x in p_eclass_mapping:
+					x = p_eclass_mapping[x]
+				impls.remove(x)
+		else:
+			break
 
-			print('%40s: %s' % (p, ' '.join(output)))
+		for f in impls:
+			output[keys.index(f)] = f
+
+		print('%44s: %s' % (p, ' '.join(output)))
 
 if len(sys.argv) == 1:
 	process(pm.stack)
