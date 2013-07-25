@@ -5,6 +5,7 @@
 from gentoopm import get_package_manager
 from gentoopm.basepm.atom import PMAtom
 
+from collections import defaultdict
 import sys
 
 pm = get_package_manager()
@@ -22,36 +23,87 @@ def has_python_in_deptree(dep):
 			return res
 	return False
 
+def is_stable(p):
+	return any([x[0] not in ('~', '-') for x in p.keywords])
+
+def group_packages(pkgs):
+	prev_key = None
+	curr = []
+
+	for p in pkgs.sorted:
+		if p.key != prev_key:
+			prev_key = p.key
+			if curr:
+				yield curr
+				curr = []
+		curr.append(p)
+
 def process(pkgs):
 	prev_key = None
 
+	eclass_order = ('distutils-r1', 'python-r1',
+		'python-single-r1', 'python-any-r1')
 	counts = {
-		# new-name: [old, new]
-		'distutils-r1': [0, 0],
-		'python-r1': [0, 0],
-		'python-single-r1': [0, 0],
-		'python-any-r1': [0, 0]
+		# new-name: [old, unstable, new]
+		'distutils-r1': [0, 0, 0],
+		'python-r1': [0, 0, 0],
+		'python-single-r1': [0, 0, 0],
+		'python-any-r1': [0, 0, 0]
 	}
 
-	for p in reversed(list(pkgs.sorted)):
-		if p.key != prev_key:
-			prev_key = p.key
+	curr = []
 
-			for eclass in counts:
+	for pg in group_packages(pkgs):
+		sys.stderr.write('\033[2K%s\r' % pg[0].key)
+
+		# eclass => [old-eclass, new-eclass]
+		# None -> no ebuilds, False -> testing, True -> stable
+		kinds = defaultdict(lambda: list([None, None]))
+
+		for p in reversed(pg):
+			# Trick: sorted() ensures that 'distutils-r1' goes
+			# before 'python-r1'
+			for eclass in sorted(counts):
 				if eclass in p.inherits:
-					counts[eclass][1] += 1
+					kinds[eclass][1] = bool(kinds[eclass][1]) | is_stable(p)
 					break
 			else:
 				if 'distutils' in p.inherits:
-					counts['distutils-r1'][0] += 1
+					eclass = 'distutils-r1'
 				elif 'python' in p.inherits:
 					if p.environ['SUPPORT_PYTHON_ABIS']:
-						counts['python-r1'][0] += 1
+						eclass = 'python-r1'
 					else:
-						counts['python-single-r1'][0] += 1
+						eclass = 'python-single-r1'
 				elif has_python_in_deptree(p.build_dependencies) \
 						and not has_python_in_deptree(p.run_dependencies):
-					counts['python-any-r1'][0] += 1
+					eclass = 'python-any-r1'
+				else:
+					continue
+
+				kinds[eclass][0] = bool(kinds[eclass][0]) | is_stable(p)
+
+		# some packages fit more than one category
+		# e.g. p.eclass supported single impl, p-r1 supports many
+		# prefer counting as the kind with -r1
+
+		best_kinds = [k for k, v in kinds.items() if v[1] is not None]
+		if not best_kinds:
+			best_kinds = [k for k, v in kinds.items() if v[0] is not None]
+		if not best_kinds: # not a python package
+			continue
+		best_kind = sorted(best_kinds, key = lambda x: eclass_order.index(x))[0]
+
+		r1_stable = any([v[1] for v in kinds.values()])
+		r0_stable = any([v[0] for v in kinds.values()])
+		r1_any = any([v[1] is not None for v in kinds.values()])
+
+		if not r1_any: # not converted yet
+			counts[best_kind][0] += 1
+		elif r0_stable and not r1_stable: # not stabilized yet
+			counts[best_kind][1] += 1
+		else: # all done
+			counts[best_kind][2] += 1
 
 #	for eclass, n in counts.items():
 #		old, new = n
@@ -61,18 +113,23 @@ def process(pkgs):
 #		print('%16s: [%3d%%] %4d/%4d converted (%4d left)'
 #				% (eclass, perc, new, sum, old))
 
+	sys.stderr.write('\n')
+
 	for eclass, n in counts.items():
-		old, new = n
-		sum = old + new
+		old, unstable, new = n
+		sum = old + unstable + new
 		perc = 100*new/sum
+		perc2 = 100*(new+unstable)/sum
 
 		print('')
 		print('/* %s */' % eclass)
-		for key, val in (('old', old), ('new', new),
-				('all', sum), ('perc', perc)):
+		for key, val in (('old', old), ('new', new + unstable),
+				('unstable', unstable), ('all', sum),
+				('perc', perc), ('perc2', perc2)):
 			# stupid firefox can't handle content without pseudo-selectors
 			print("#%s-%s:before { content: '%d'; }" % (eclass, key, val))
 		print('#%s-bar { width: %d%%; }' % (eclass, perc))
+		print('#%s-bar2 { width: %d%%; }' % (eclass, perc2))
 
 if len(sys.argv) == 1:
 	process(pm.repositories['gentoo'])

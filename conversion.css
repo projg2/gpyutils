@@ -50,9 +50,21 @@ dd
 .progressbar
 {
 	background: #afa;
+
+	margin-top: -2em;
 }
 
 .progressbar:before
+{
+	content: '\a0';
+}
+
+.progressbar2
+{
+	background: #ffa;
+}
+
+.progressbar2:before
 {
 	content: '\a0';
 }
