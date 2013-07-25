@@ -46,7 +46,7 @@ def process(pkgs):
 					x = p_eclass_mapping[x]
 				impls.remove(x)
 		else:
-			break
+			continue
 
 		for f in impls:
 			output[keys.index(f)] = f
