@@ -118,8 +118,8 @@ def process(pkgs):
 	for eclass, n in counts.items():
 		old, unstable, new = n
 		sum = old + unstable + new
-		perc = 100*new/sum
-		perc2 = 100*(new+unstable)/sum
+		perc = 100.0*new/sum
+		perc2 = 100.0*(new+unstable)/sum
 
 		print('')
 		print('/* %s */' % eclass)
@@ -128,8 +128,8 @@ def process(pkgs):
 				('perc', perc), ('perc2', perc2)):
 			# stupid firefox can't handle content without pseudo-selectors
 			print("#%s-%s:before { content: '%d'; }" % (eclass, key, val))
-		print('#%s-bar { width: %d%%; }' % (eclass, perc))
-		print('#%s-bar2 { width: %d%%; }' % (eclass, perc2))
+		print('#%s-bar { width: %.2f%%; }' % (eclass, perc))
+		print('#%s-bar2 { width: %.2f%%; }' % (eclass, perc2))
 
 if len(sys.argv) == 1:
 	process(pm.repositories['gentoo'])
