@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+
+from gentoopm import get_package_manager
+
+import sys
+
+pm = get_package_manager()
+
+old_eclass = {
+	'python2_5': '2.5',
+	'python2_6': '2.6',
+	'python2_7': '2.7',
+	'python3_1': '3.1',
+	'python3_2': '3.2',
+	'python3_3': '3.3',
+	'pypy1_8': '2.7-pypy-1.8',
+	'pypy1_9': '2.7-pypy-1.9',
+	'pypy2_0': '2.7-pypy-2.0',
+	'pypy2_1': '2.7-pypy-2.1',
+	'jython2_7': '2.7-jython',
+}
+
+def group_packages(pkgs):
+	prev_key = None
+	curr = []
+
+	for p in pkgs.sorted:
+		if p.key != prev_key:
+			prev_key = p.key
+			if curr:
+				yield curr
+				curr = []
+		curr.append(p)
+
+def process(pkgs, old, new):
+	for i, pg in enumerate(group_packages(pkgs)):
+		p = pg[-1]
+
+		p_r1 = any([x in p.inherits for x in ('python-r1', 'python-any-r1',
+				'python-single-r1', 'python-distutils-ng')])
+		p_r0 = 'python' in p.inherits
+
+		res = None
+
+		if p_r1:
+			impls = p.environ['PYTHON_COMPAT[*]'].split()
+			if old[0] in impls and new[0] not in impls:
+				print(p.slotted_atom)
+		elif p_r0:
+			restricts = p.environ['RESTRICT_PYTHON_ABIS'].split()
+			if old[0] not in restricts and new[0] in restricts:
+				print(p.slotted_atom)
+
+if len(sys.argv) < 3:
+	print('Usage: %s <old-impl> <new-impl> [<packages>...]' % sys.argv[0])
+	sys.exit(1)
+
+old = (sys.argv[1], old_eclass[sys.argv[1]])
+new = (sys.argv[2], old_eclass[sys.argv[2]])
+
+if len(sys.argv) == 3:
+	process(pm.repositories['gentoo'], old, new)
+else:
+	for pkg in sys.argv[3:]:
+		process(pm.stack.filter(pkg), old, new)
