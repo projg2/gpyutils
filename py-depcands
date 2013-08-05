@@ -4,6 +4,8 @@ from gentoopm import get_package_manager
 from gentoopm.basepm.atom import PMAtom
 from gentoopm.exceptions import EmptyPackageSetError
 
+from gpyutils.ansi import ANSI
+
 import sys
 
 pm = get_package_manager()
@@ -48,7 +50,16 @@ output = {}
 print('[note: each package is listed at most once]')
 
 def process(pkgs, assume_r1 = False):
+	sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
+			% (ANSI.clear_line, ANSI.brown, ANSI.reset))
+
+	total_need = 0
+
 	for p in pkgs:
+		sys.stderr.write('%s%s%-56s%s (%s%4d%s found)\r'
+				% (ANSI.clear_line, ANSI.green, p, ANSI.reset,
+					ANSI.white, total_need, ANSI.reset))
+
 		t = PkgType(p)
 		if not assume_r1 and t is not PkgType.python_r1:
 			continue
@@ -64,6 +75,7 @@ def process(pkgs, assume_r1 = False):
 						return
 
 				# USE deps cause problems with matching, strip them
+				# Note to self: this is ugly.
 				dep = pm.Atom(str(dep).partition('[')[0])
 
 				try:
@@ -73,10 +85,19 @@ def process(pkgs, assume_r1 = False):
 					return
 
 				if PkgType(dep_pkg, curr_pkg) is PkgType.python:
+					# in case stdout & stderr goes to the same console,
+					# clean up the line before printing
+					sys.stderr.write('%s\r' % ANSI.clear_line)
+
 					if was_first[0]:
 						print('%s' % p)
 						was_first[0] = False
 					print('%s%s' % ('    ' * (depth + 1), dep))
+
+					# depscan takes a while, so re-output status
+					sys.stderr.write('%s%s%-56s%s (%s%4d%s found)\r'
+							% (ANSI.clear_line, ANSI.green, p, ANSI.reset,
+								ANSI.white, total_need, ANSI.reset))
 
 					output[dep_pkg] = 1
 
@@ -91,8 +112,11 @@ def process(pkgs, assume_r1 = False):
 		for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
 			check_dep(d)
 
+	sys.stderr.write('%s%sDone.%s\n'
+			% (ANSI.clear_line, ANSI.white, ANSI.reset))
+
 if len(sys.argv) == 1:
-	process(pm.stack)
+	process(pm.repositories['gentoo'])
 else:
 	for pkg in sys.argv[1:]:
 		process(pm.stack.filter(pkg), True)

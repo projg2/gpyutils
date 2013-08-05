@@ -8,6 +8,9 @@ from gentoopm.basepm.atom import PMAtom
 from collections import defaultdict
 import sys
 
+from gpyutils.ansi import ANSI
+from gpyutils.packages import group_packages
+
 pm = get_package_manager()
 
 def has_python_in_deptree(dep):
@@ -26,18 +29,6 @@ def has_python_in_deptree(dep):
 def is_stable(p):
 	return any([x[0] not in ('~', '-') for x in p.keywords])
 
-def group_packages(pkgs):
-	prev_key = None
-	curr = []
-
-	for p in pkgs.sorted:
-		if p.key != prev_key:
-			prev_key = p.key
-			if curr:
-				yield curr
-				curr = []
-		curr.append(p)
-
 def process(pkgs):
 	prev_key = None
 
@@ -52,9 +43,17 @@ def process(pkgs):
 	}
 
 	curr = []
+	total_migr = 0
+	total_pkg = 0
+
+	sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
+			% (ANSI.clear_line, ANSI.brown, ANSI.reset))
 
 	for pg in group_packages(pkgs):
-		sys.stderr.write('\033[2K%s\r' % pg[0].key)
+		sys.stderr.write('%s%s%-40s%s (%s%4d%s of %s%4d%s migrated)\r'
+				% (ANSI.clear_line, ANSI.green, pg[0].key, ANSI.reset,
+					ANSI.white, total_migr, ANSI.reset,
+					ANSI.white, total_pkg, ANSI.reset))
 
 		# eclass => [old-eclass, new-eclass]
 		# None -> no ebuilds, False -> testing, True -> stable
@@ -100,10 +99,14 @@ def process(pkgs):
 
 		if not r1_any: # not converted yet
 			counts[best_kind][0] += 1
-		elif r0_stable and not r1_stable: # not stabilized yet
-			counts[best_kind][1] += 1
-		else: # all done
-			counts[best_kind][2] += 1
+		else:
+			total_migr += 1
+			if r0_stable and not r1_stable: # not stabilized yet
+				counts[best_kind][1] += 1
+			else: # all done
+				counts[best_kind][2] += 1
+
+		total_pkg += 1
 
 #	for eclass, n in counts.items():
 #		old, new = n
@@ -113,7 +116,8 @@ def process(pkgs):
 #		print('%16s: [%3d%%] %4d/%4d converted (%4d left)'
 #				% (eclass, perc, new, sum, old))
 
-	sys.stderr.write('\n')
+	sys.stderr.write('%s%sDone.%s\n'
+			% (ANSI.clear_line, ANSI.white, ANSI.reset))
 
 	for eclass, n in counts.items():
 		old, unstable, new = n

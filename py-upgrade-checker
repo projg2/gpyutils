@@ -2,6 +2,9 @@
 
 from gentoopm import get_package_manager
 
+from gpyutils.ansi import ANSI
+from gpyutils.packages import group_packages
+
 import sys
 
 pm = get_package_manager()
@@ -20,36 +23,48 @@ old_eclass = {
 	'jython2_7': '2.7-jython',
 }
 
-def group_packages(pkgs):
-	prev_key = None
-	curr = []
-
-	for p in pkgs.sorted:
-		if p.key != prev_key:
-			prev_key = p.key
-			if curr:
-				yield curr
-				curr = []
-		curr.append(p)
-
 def process(pkgs, old, new):
-	for i, pg in enumerate(group_packages(pkgs)):
+	total_upd = 0
+	total_pkg = 0
+
+	sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
+			% (ANSI.clear_line, ANSI.brown, ANSI.reset))
+
+	for pg in group_packages(pkgs):
+		sys.stderr.write('%s%s%-40s%s (%s%4d%s of %s%4d%s need checking)\r'
+				% (ANSI.clear_line, ANSI.green, pg[0].key, ANSI.reset,
+					ANSI.white, total_upd, ANSI.reset,
+					ANSI.white, total_pkg, ANSI.reset))
+
 		p = pg[-1]
 
 		p_r1 = any([x in p.inherits for x in ('python-r1', 'python-any-r1',
 				'python-single-r1', 'python-distutils-ng')])
 		p_r0 = 'python' in p.inherits
 
-		res = None
-
+		need_upd = False
 		if p_r1:
 			impls = p.environ['PYTHON_COMPAT[*]'].split()
-			if old[0] in impls and new[0] not in impls:
-				print(p.slotted_atom)
+			if old[0] in impls:
+				total_pkg += 1
+				if new[0] not in impls:
+					need_upd = True
 		elif p_r0:
 			restricts = p.environ['RESTRICT_PYTHON_ABIS'].split()
-			if old[0] not in restricts and new[0] in restricts:
-				print(p.slotted_atom)
+			if old[0] not in restricts:
+				total_pkg += 1
+				if new[0] in restricts:
+					need_upd = True
+
+		if need_upd:
+			total_upd += 1
+			# in case stdout & stderr goes to the same console,
+			# clean up the line before printing
+			sys.stderr.write('%s\r' % ANSI.clear_line)
+			print(p.slotted_atom)
+
+	sys.stderr.write('%s%sDone.%s\n'
+			% (ANSI.clear_line, ANSI.white, ANSI.reset))
 
 if len(sys.argv) < 3:
 	print('Usage: %s <old-impl> <new-impl> [<packages>...]' % sys.argv[0])

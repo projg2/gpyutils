@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Note: this tool is temporarily unmaintained.
+
 from gentoopm.pkgcorepm import PkgCorePM
 from gentoopm.pkgcorepm.atom import PkgCoreAtom
 
