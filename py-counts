@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+#	vim:fileencoding=utf-8
+# (c) 2013 Michał Górny <mgorny@gentoo.org>
+# Released under the terms of the 2-clause BSD license.
+
 # Count migrated packages and packages to migrate.
 # Synopsis: ./py-counts > counts.css
 
@@ -15,6 +19,9 @@ pm = get_package_manager()
 
 def is_stable(p):
 	return any([x[0] not in ('~', '-') for x in p.keywords])
+
+if sys.stdout.isatty():
+	sys.stderr.write('[note: I output CSS, you want >counts.css]\n')
 
 def process(pkgs):
 	prev_key = None
