@@ -3,26 +3,12 @@
 from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
-from gpyutils.eclasses import guess_package_type, PkgType
+from gpyutils.implementations import get_python_impls, get_impl_by_name
 from gpyutils.packages import group_packages
 
 import sys
 
 pm = get_package_manager()
-
-old_eclass = {
-	'python2_5': '2.5',
-	'python2_6': '2.6',
-	'python2_7': '2.7',
-	'python3_1': '3.1',
-	'python3_2': '3.2',
-	'python3_3': '3.3',
-	'pypy1_8': '2.7-pypy-1.8',
-	'pypy1_9': '2.7-pypy-1.9',
-	'pypy2_0': '2.7-pypy-2.0',
-	'pypy2_1': '2.7-pypy-2.1',
-	'jython2_7': '2.7-jython',
-}
 
 def process(pkgs, old, new):
 	total_upd = 0
@@ -38,31 +24,20 @@ def process(pkgs, old, new):
 					ANSI.white, total_pkg, ANSI.reset))
 
 		p = pg[-1]
-		t = guess_package_type(p, check_deps=False)
 
-		p_r1 = isinstance(t, PkgType.python_r1)
-		p_r0 = isinstance(t, PkgType.python_r0)
+		impls = get_python_impls(p)
+		if impls is None:
+			# not a Python package
+			continue
 
-		need_upd = False
-		if p_r1:
-			impls = p.environ['PYTHON_COMPAT[*]'].split()
-			if old[0] in impls:
-				total_pkg += 1
-				if new[0] not in impls:
-					need_upd = True
-		elif p_r0:
-			restricts = p.environ['RESTRICT_PYTHON_ABIS'].split()
-			if old[0] not in restricts:
-				total_pkg += 1
-				if new[0] in restricts:
-					need_upd = True
-
-		if need_upd:
-			total_upd += 1
-			# in case stdout & stderr goes to the same console,
-			# clean up the line before printing
-			sys.stderr.write('%s\r' % ANSI.clear_line)
-			print(p.slotted_atom)
+		if old in impls:
+			total_pkg += 1
+			if new not in impls:
+				total_upd += 1
+				# in case stdout & stderr goes to the same console,
+				# clean up the line before printing
+				sys.stderr.write('%s\r' % ANSI.clear_line)
+				print(p.slotted_atom)
 
 	sys.stderr.write('%s%sDone.%s\n'
 			% (ANSI.clear_line, ANSI.white, ANSI.reset))
@@ -71,8 +46,9 @@ if len(sys.argv) < 3:
 	print('Usage: %s <old-impl> <new-impl> [<packages>...]' % sys.argv[0])
 	sys.exit(1)
 
-old = (sys.argv[1], old_eclass[sys.argv[1]])
-new = (sys.argv[2], old_eclass[sys.argv[2]])
+old = get_impl_by_name(sys.argv[1])
+new = get_impl_by_name(sys.argv[2])
+
 
 if len(sys.argv) == 3:
 	process(pm.repositories['gentoo'], old, new)

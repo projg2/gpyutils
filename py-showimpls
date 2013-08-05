@@ -3,77 +3,28 @@
 from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
+from gpyutils.implementations import implementations, get_python_impls
 from gpyutils.packages import group_packages
 
 import sys
 
 pm = get_package_manager()
 
-colors = {
-	'2.5': ANSI.brown,
-	'2.6': ANSI.green,
-	'2.7': ANSI.bgreen,
-	'3.1': ANSI.brown,
-	'3.2': ANSI.bgreen,
-	'3.3': ANSI.purple,
-	'p1.8': ANSI.red,
-	'p1.9': ANSI.brown,
-	'p2.0': ANSI.green,
-	'p2.1': ANSI.purple,
-	'j2.5': ANSI.red,
-	'j2.7': ANSI.purple,
-}
-
-mapping = {
-	'python2_5': '2.5',
-	'python2_6': '2.6',
-	'python2_7': '2.7',
-	'python3_1': '3.1',
-	'python3_2': '3.2',
-	'python3_3': '3.3',
-	'pypy1_8': 'p1.8',
-	'pypy1_9': 'p1.9',
-	'pypy2_0': 'p2.0',
-	'pypy2_1': 'p2.1',
-	'jython2_5': 'j2.5',
-	'jython2_7': 'j2.7',
-}
-
-p_eclass_mapping = {
-	'2.7-pypy-1.8': 'p1.8',
-	'2.7-pypy-1.9': 'p1.9',
-	'2.7-pypy-2.0': 'p2.0',
-	'2.7-pypy-2.1': 'p2.1',
-	'2.5-jython': 'j2.5',
-	'2.7-jython': 'j2.7',
-}
-
-keys = sorted(mapping.values())
+keys = [i.short_name for i in implementations]
 
 def process(pkgs):
 	for pg in group_packages(pkgs.sorted, 'slotted_atom'):
 		print('%s%s%s' % (ANSI.white, pg[0].slotted_atom, ANSI.reset))
 		for p in pg:
-			p_r1 = any([x in p.inherits for x in ('python-r1', 'python-any-r1',
-					'python-single-r1', 'python-distutils-ng')])
-			p_r0 = 'python' in p.inherits
-
 			output = [' ' * len(x) for x in keys]
 
-			if p_r1:
-				impls = [mapping[x] for x
-						in p.environ['PYTHON_COMPAT[*]'].split()]
-			elif p_r0:
-				impls = set(keys)
-				for x in p.environ['RESTRICT_PYTHON_ABIS'].split():
-					if x in p_eclass_mapping:
-						x = p_eclass_mapping[x]
-					impls.remove(x)
-			else:
+			impls = get_python_impls(p)
+			if impls is None:
+				# not a python package
 				continue
-
-			for f in impls:
-				output[keys.index(f)] = '%s%s%s' % (colors[f], f, ANSI.reset)
+			for i in impls:
+				output[keys.index(i.short_name)] = ('%s%s%s'
+					% (i.status.color, i.short_name, ANSI.reset))
 
 			print('%16s: %s' % (p.version, ' '.join(output)))
 
