@@ -31,9 +31,15 @@ def process(pkgs):
 
 			print('%16s: %s' % (p.version, ' '.join(output)))
 
-if len(sys.argv) <= 1:
-	print('Usage: %s <atom>...' % sys.argv[0])
-	sys.exit(1)
+def main(prog_name, *packages):
+	if not packages:
+		sys.stderr.write('Usage: %s <atom>...\n' % prog_name)
+		return 1
 
-for pkg in sys.argv[1:]:
-	process(pm.repositories['gentoo'].filter(pkg))
+	for pkg in packages:
+		process(pm.repositories['gentoo'].filter(pkg))
+
+	return 0
+
+if __name__ == '__main__':
+	sys.exit(main(*sys.argv))

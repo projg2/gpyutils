@@ -76,7 +76,7 @@ def process(pkgs):
 				# USE deps cause problems with matching, strip them
 				dep = pm.Atom(str(dep).partition('[')[0])
 
-				pkgs = list(pm.stack.filter(dep))
+				pkgs = list(pm.repositories['gentoo'].filter(dep))
 				if not pkgs:
 					print('%s: no package matches %s' % (p, dep))
 					return
@@ -100,8 +100,14 @@ def process(pkgs):
 		for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
 			check_dep(d)
 
-if len(sys.argv) == 1:
-	process(pm.stack)
-else:
-	for pkg in sys.argv[1:]:
-		process(pm.stack.filter(pkg))
+def main(prog_name, *packages):
+	if not packages:
+		process(pm.repositories['gentoo'])
+	else:
+		for pkg in packages:
+			process(pm.repositories['gentoo'].filter(pkg))
+
+	return 0
+
+if __name__ == '__main__':
+	sys.exit(main(*sys.argv))

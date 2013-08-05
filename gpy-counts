@@ -20,9 +20,6 @@ pm = get_package_manager()
 def is_stable(p):
 	return any([x[0] not in ('~', '-') for x in p.keywords])
 
-if sys.stdout.isatty():
-	sys.stderr.write('[note: I output CSS, you want >counts.css]\n')
-
 def process(pkgs):
 	prev_key = None
 
@@ -97,8 +94,17 @@ def process(pkgs):
 		print('#%s-bar { width: %.2f%%; }' % (eclass, perc))
 		print('#%s-bar2 { width: %.2f%%; }' % (eclass, perc2))
 
-if len(sys.argv) == 1:
-	process(pm.repositories['gentoo'])
-else:
-	for pkg in sys.argv[1:]:
-		process(pm.stack.filter(pkg))
+def main(prog_name, *packages):
+	if sys.stdout.isatty():
+		sys.stderr.write('[note: I output CSS, you want >counts.css]\n')
+
+	if not packages:
+		process(pm.repositories['gentoo'])
+	else:
+		for pkg in packages:
+			process(pm.repositories['gentoo'].filter(pkg))
+
+	return 0
+
+if __name__ == '__main__':
+	sys.exit(main(*sys.argv))

@@ -45,16 +45,21 @@ def process(pkgs, old, new):
 	sys.stderr.write('%s%sDone.%s\n'
 			% (ANSI.clear_line, ANSI.white, ANSI.reset))
 
-if len(sys.argv) < 3:
-	print('Usage: %s <old-impl> <new-impl> [<packages>...]' % sys.argv[0])
-	sys.exit(1)
+def main(prog_name, old, new, *packages):
+	old = get_impl_by_name(sys.argv[1])
+	new = get_impl_by_name(sys.argv[2])
 
-old = get_impl_by_name(sys.argv[1])
-new = get_impl_by_name(sys.argv[2])
+	if not packages:
+		process(pm.repositories['gentoo'], old, new)
+	else:
+		for pkg in packages:
+			process(pm.repositories['gentoo'].filter(pkg), old, new)
 
+	return 0
 
-if len(sys.argv) == 3:
-	process(pm.repositories['gentoo'], old, new)
-else:
-	for pkg in sys.argv[3:]:
-		process(pm.stack.filter(pkg), old, new)
+if __name__ == '__main__':
+	if len(sys.argv) < 3:
+		sys.stderr.write('Usage: %s <old-impl> <new-impl> [<packages>...]\n' % sys.argv[0])
+		sys.exit(1)
+
+	sys.exit(main(*sys.argv))

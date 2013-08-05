@@ -14,11 +14,7 @@ import sys
 
 pm = get_package_manager()
 
-output = {}
-
-sys.stderr.write('[note: each package is listed at most once]\n')
-
-def process(pkgs, assume_r1 = False):
+def process(pkgs, output, assume_r1 = False):
 	sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
 			% (ANSI.clear_line, ANSI.brown, ANSI.reset))
 
@@ -48,7 +44,7 @@ def process(pkgs, assume_r1 = False):
 				dep = pm.Atom(str(dep).partition('[')[0])
 
 				try:
-					dep_pkg = pm.stack.select(dep)
+					dep_pkg = pm.repositories['gentoo'].select(dep)
 				except EmptyPackageSetError:
 	#				print('%s: no package matches %s' % (p, dep))
 					return
@@ -85,12 +81,22 @@ def process(pkgs, assume_r1 = False):
 	sys.stderr.write('%s%sDone.%s\n'
 			% (ANSI.clear_line, ANSI.white, ANSI.reset))
 
-if len(sys.argv) == 1:
-	process(pm.repositories['gentoo'])
-else:
-	for pkg in sys.argv[1:]:
-		process(pm.stack.filter(pkg), True)
+def main(prog_name, *packages):
+	output = {}
 
-print('Statistics:')
-for p, count in sorted(output.items(), key = lambda x: x[1]):
-	print(' %4d %s' % (count, p))
+	sys.stderr.write('[note: each package is listed at most once]\n')
+
+	if not packages:
+		process(pm.repositories['gentoo'], output)
+	else:
+		for pkg in packages:
+			process(pm.repositories['gentoo'].filter(pkg), output, assume_r1=True)
+
+	print('Statistics:')
+	for p, count in sorted(output.items(), key=lambda x: x[1]):
+		print(' %4d %s' % (count, p))
+
+	return 0
+
+if __name__ == '__main__':
+	sys.exit(main(*sys.argv))
