@@ -6,8 +6,10 @@
 from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
+from gpyutils.eclasses import guess_package_type, PkgType
 from gpyutils.implementations import get_python_impls, get_impl_by_name
 from gpyutils.packages import group_packages
+from gpyutils.pycompat import add_impl_to_ebuild
 
 import sys
 
@@ -41,6 +43,13 @@ def process(pkgs, old, new):
 				# clean up the line before printing
 				sys.stderr.write('%s\r' % ANSI.clear_line)
 				print(p.slotted_atom)
+
+				if isinstance(guess_package_type(p), PkgType.python_r1):
+					try:
+						add_impl_to_ebuild(p.path, new.r1_name)
+					except Exception as e:
+						sys.stderr.write('%s%s%s\n'
+								% (ANSI.brown, str(e), ANSI.reset))
 
 	sys.stderr.write('%s%sDone.%s\n'
 			% (ANSI.clear_line, ANSI.white, ANSI.reset))
