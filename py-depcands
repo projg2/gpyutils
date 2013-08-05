@@ -5,45 +5,11 @@ from gentoopm.basepm.atom import PMAtom
 from gentoopm.exceptions import EmptyPackageSetError
 
 from gpyutils.ansi import ANSI
+from gpyutils.eclasses import guess_package_type, PkgType
 
 import sys
 
 pm = get_package_manager()
-
-class PkgType(object):
-	class other(object):
-		def __gt__(self, other):
-			return False
-
-	class python(object):
-		def __gt__(self, other):
-			return other is PkgType.other
-
-	class python_r1(object):
-		def __gt__(self, other):
-			return True
-
-	def __new__(cls, pkg, curr_pkg = None):
-		# excludes
-		if pkg.key in ('dev-lang/python',
-				'dev-python/pypy',
-				'dev-java/jython'):
-			return cls.other
-
-		if curr_pkg is not None:
-			if 'git-2' in curr_pkg.inherits and pkg.key == 'dev-vcs/git':
-				return cls.other
-			elif 'subversion' in curr_pkg.inherits and pkg.key == 'dev-vcs/subversion':
-				return cls.other
-
-		if 'python-r1' in pkg.inherits:
-			return cls.python_r1
-		elif 'python-single-r1' in pkg.inherits:
-			return cls.python_r1
-		elif 'python' in pkg.inherits:
-			return cls.python
-		else:
-			return cls.other
 
 output = {}
 
@@ -60,8 +26,8 @@ def process(pkgs, assume_r1 = False):
 				% (ANSI.clear_line, ANSI.green, p, ANSI.reset,
 					ANSI.white, total_need, ANSI.reset))
 
-		t = PkgType(p)
-		if not assume_r1 and t is not PkgType.python_r1:
+		t = guess_package_type(p, check_deps=False)
+		if not assume_r1 and not isinstance(t, PkgType.python_r1):
 			continue
 
 		def check_dep(dep, depth = 0, was_first = [True], curr_pkg = p):
@@ -84,7 +50,8 @@ def process(pkgs, assume_r1 = False):
 	#				print('%s: no package matches %s' % (p, dep))
 					return
 
-				if PkgType(dep_pkg, curr_pkg) is PkgType.python:
+				dep_t = guess_package_type(dep_pkg)
+				if isinstance(dep_t, PkgType.python_r0):
 					# in case stdout & stderr goes to the same console,
 					# clean up the line before printing
 					sys.stderr.write('%s\r' % ANSI.clear_line)

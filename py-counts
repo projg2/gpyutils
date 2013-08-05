@@ -3,28 +3,15 @@
 # Synopsis: ./py-counts > counts.css
 
 from gentoopm import get_package_manager
-from gentoopm.basepm.atom import PMAtom
 
 from collections import defaultdict
 import sys
 
 from gpyutils.ansi import ANSI
+from gpyutils.eclasses import guess_package_type, PkgType
 from gpyutils.packages import group_packages
 
 pm = get_package_manager()
-
-def has_python_in_deptree(dep):
-	for d in dep:
-		res = False
-
-		if isinstance(d, PMAtom):
-			res = d.key == 'dev-lang/python'
-		else:
-			res = has_python_in_deptree(d)
-
-		if res:
-			return res
-	return False
 
 def is_stable(p):
 	return any([x[0] not in ('~', '-') for x in p.keywords])
@@ -32,15 +19,8 @@ def is_stable(p):
 def process(pkgs):
 	prev_key = None
 
-	eclass_order = ('distutils-r1', 'python-r1',
-		'python-single-r1', 'python-any-r1')
-	counts = {
-		# new-name: [old, unstable, new]
-		'distutils-r1': [0, 0, 0],
-		'python-r1': [0, 0, 0],
-		'python-single-r1': [0, 0, 0],
-		'python-any-r1': [0, 0, 0]
-	}
+	# new-name: [old, unstable, new]
+	counts = defaultdict(lambda: [0, 0, 0])
 
 	curr = []
 	total_migr = 0
@@ -57,45 +37,27 @@ def process(pkgs):
 
 		# eclass => [old-eclass, new-eclass]
 		# None -> no ebuilds, False -> testing, True -> stable
-		kinds = defaultdict(lambda: list([None, None]))
+		kinds = defaultdict(lambda: defaultdict(lambda: None))
 
-		for p in reversed(pg):
-			# Trick: sorted() ensures that 'distutils-r1' goes
-			# before 'python-r1'
-			for eclass in sorted(counts):
-				if eclass in p.inherits:
-					kinds[eclass][1] = bool(kinds[eclass][1]) | is_stable(p)
-					break
-			else:
-				if 'distutils' in p.inherits:
-					eclass = 'distutils-r1'
-				elif 'python' in p.inherits:
-					if p.environ['SUPPORT_PYTHON_ABIS']:
-						eclass = 'python-r1'
-					else:
-						eclass = 'python-single-r1'
-				elif has_python_in_deptree(p.build_dependencies) \
-						and not has_python_in_deptree(p.run_dependencies):
-					eclass = 'python-any-r1'
-				else:
-					continue
-
-				kinds[eclass][0] = bool(kinds[eclass][0]) | is_stable(p)
+		for p in pg:
+			t = guess_package_type(p)
+			if not isinstance(t, PkgType.non_python):
+				kinds[t.subtype][t] = bool(kinds[t.subtype][t]) | is_stable(p)
 
 		# some packages fit more than one category
 		# e.g. p.eclass supported single impl, p-r1 supports many
 		# prefer counting as the kind with -r1
 
-		best_kinds = [k for k, v in kinds.items() if v[1] is not None]
+		best_kinds = [k for k, v in kinds.items() if v[PkgType.python_r1] is not None]
 		if not best_kinds:
-			best_kinds = [k for k, v in kinds.items() if v[0] is not None]
+			best_kinds = [k for k, v in kinds.items() if v[PkgType.python_r0] is not None]
 		if not best_kinds: # not a python package
 			continue
-		best_kind = sorted(best_kinds, key = lambda x: eclass_order.index(x))[0]
+		best_kind = sorted(best_kinds)[-1]
 
-		r1_stable = any([v[1] for v in kinds.values()])
-		r0_stable = any([v[0] for v in kinds.values()])
-		r1_any = any([v[1] is not None for v in kinds.values()])
+		r1_stable = any([v[PkgType.python_r1] for v in kinds.values()])
+		r0_stable = any([v[PkgType.python_r0] for v in kinds.values()])
+		r1_any = any([v[PkgType.python_r1] is not None for v in kinds.values()])
 
 		if not r1_any: # not converted yet
 			counts[best_kind][0] += 1
@@ -108,18 +70,11 @@ def process(pkgs):
 
 		total_pkg += 1
 
-#	for eclass, n in counts.items():
-#		old, new = n
-#		sum = old + new
-#		perc = 100*new/sum
-#
-#		print('%16s: [%3d%%] %4d/%4d converted (%4d left)'
-#				% (eclass, perc, new, sum, old))
-
 	sys.stderr.write('%s%sDone.%s\n'
 			% (ANSI.clear_line, ANSI.white, ANSI.reset))
 
-	for eclass, n in counts.items():
+	for t, n in counts.items():
+		eclass = t.eclass_r1
 		old, unstable, new = n
 		sum = old + unstable + new
 		perc = 100.0*new/sum

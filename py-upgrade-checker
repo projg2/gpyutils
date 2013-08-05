@@ -3,6 +3,7 @@
 from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
+from gpyutils.eclasses import guess_package_type, PkgType
 from gpyutils.packages import group_packages
 
 import sys
@@ -37,10 +38,10 @@ def process(pkgs, old, new):
 					ANSI.white, total_pkg, ANSI.reset))
 
 		p = pg[-1]
+		t = guess_package_type(p, check_deps=False)
 
-		p_r1 = any([x in p.inherits for x in ('python-r1', 'python-any-r1',
-				'python-single-r1', 'python-distutils-ng')])
-		p_r0 = 'python' in p.inherits
+		p_r1 = isinstance(t, PkgType.python_r1)
+		p_r0 = isinstance(t, PkgType.python_r0)
 
 		need_upd = False
 		if p_r1:
