@@ -22,24 +22,20 @@ def has_python_in_deptree(dep):
 class PkgSubType(object):
 	""" Package sub-type. """
 
-	class distutils(object):
+	class distutils(EnumObj(4)):
 		""" distutils-r1 / distutils """
-		__metaclass__ = EnumObj(4)
 		eclass_r1 = 'distutils-r1'
 
-	class python(object):
+	class python(EnumObj(3)):
 		""" python-r1 / multi-ABI python """
-		__metaclass__ = EnumObj(3)
 		eclass_r1 = 'python-r1'
 
-	class python_single(object):
+	class python_single(EnumObj(2)):
 		""" python-single-r1 / single-ABI python """
-		__metaclass__ = EnumObj(2)
 		eclass_r1 = 'python-single-r1'
 
-	class python_any(object):
+	class python_any(EnumObj(1)):
 		""" python-any-r1 / any random python dep """
-		__metaclass__ = EnumObj(1)
 		eclass_r1 = 'python-any-r1'
 
 	all_subtypes = (distutils, python, python_single, python_any)
@@ -47,13 +43,10 @@ class PkgSubType(object):
 class PkgType(object):
 	""" Guess package type from inherited eclasses. """
 
-	class non_python(object):
-		__metaclass__ = EnumObj(1)
+	class non_python(EnumObj(1)):
 		pass
 
-	class python_r0(object):
-		__metaclass__ = EnumObj(2)
-
+	class python_r0(EnumObj(2)):
 		def __init__(self, subtype_or_pkg, lazy=False):
 			if not lazy:
 				self._subtype = subtype_or_pkg()
@@ -74,9 +67,7 @@ class PkgType(object):
 
 			return self._subtype
 
-	class python_r1(object):
-		__metaclass__ = EnumObj(3)
-
+	class python_r1(EnumObj(3)):
 		def __init__(self, subtype):
 			self.subtype = subtype
 

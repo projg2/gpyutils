@@ -7,24 +7,19 @@ from .eclasses import guess_package_type, PkgType
 from .util import EnumObj
 
 class Status(object):
-	class dead(object):
-		__metaclass__ = EnumObj(1)
+	class dead(EnumObj(1)):
 		color = ANSI.red
 
-	class old(object):
-		__metaclass__ = EnumObj(2)
+	class old(EnumObj(2)):
 		color = ANSI.brown
 
-	class supported(object):
-		__metaclass__ = EnumObj(3)
+	class supported(EnumObj(3)):
 		color = ANSI.green
 
-	class current(object):
-		__metaclass__ = EnumObj(4)
+	class current(EnumObj(4)):
 		color = ANSI.bgreen
 
-	class experimental(object):
-		__metaclass__ = EnumObj(5)
+	class experimental(EnumObj(5)):
 		color = ANSI.purple
 
 class PythonImpl(object):
