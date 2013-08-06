@@ -18,7 +18,7 @@ setup(
 			'gpy-depcands',
 #			'gpy-depcheck',
 			'gpy-showimpls',
-			'gpy-upgrade-checker',
+			'gpy-upgrade-impl',
 		],
 
 		classifiers = [
