@@ -81,15 +81,15 @@ def process(pkgs, output, assume_r1 = False):
 	sys.stderr.write('%s%sDone.%s\n'
 			% (ANSI.clear_line, ANSI.white, ANSI.reset))
 
-def main(prog_name, *packages):
+def main(prog_name, *argv):
 	output = {}
 
 	sys.stderr.write('[note: each package is listed at most once]\n')
 
-	if not packages:
+	if not argv:
 		process(pm.repositories['gentoo'], output)
 	else:
-		for pkg in packages:
+		for pkg in argv:
 			process(pm.repositories['gentoo'].filter(pkg), output, assume_r1=True)
 
 	print('Statistics:')

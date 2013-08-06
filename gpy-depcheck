@@ -100,11 +100,11 @@ def process(pkgs):
 		for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
 			check_dep(d)
 
-def main(prog_name, *packages):
-	if not packages:
+def main(prog_name, *argv):
+	if not argv:
 		process(pm.repositories['gentoo'])
 	else:
-		for pkg in packages:
+		for pkg in argv:
 			process(pm.repositories['gentoo'].filter(pkg))
 
 	return 0

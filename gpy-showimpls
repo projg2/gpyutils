@@ -31,12 +31,12 @@ def process(pkgs):
 
 			print('%16s: %s' % (p.version, ' '.join(output)))
 
-def main(prog_name, *packages):
-	if not packages:
+def main(prog_name, *argv):
+	if not argv:
 		sys.stderr.write('Usage: %s <atom>...\n' % prog_name)
 		return 1
 
-	for pkg in packages:
+	for pkg in argv:
 		process(pm.repositories['gentoo'].filter(pkg))
 
 	return 0

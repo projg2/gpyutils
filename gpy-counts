@@ -94,14 +94,14 @@ def process(pkgs):
 		print('#%s-bar { width: %.2f%%; }' % (eclass, perc))
 		print('#%s-bar2 { width: %.2f%%; }' % (eclass, perc2))
 
-def main(prog_name, *packages):
+def main(prog_name, *argv):
 	if sys.stdout.isatty():
 		sys.stderr.write('[note: I output CSS, you want >counts.css]\n')
 
-	if not packages:
+	if not argv:
 		process(pm.repositories['gentoo'])
 	else:
-		for pkg in packages:
+		for pkg in argv:
 			process(pm.repositories['gentoo'].filter(pkg))
 
 	return 0
