@@ -11,11 +11,11 @@ from gpyutils.implementations import get_python_impls, get_impl_by_name
 from gpyutils.packages import group_packages
 from gpyutils.pycompat import add_impl_to_ebuild
 
-import sys
+import optparse, sys
 
 pm = get_package_manager()
 
-def process(pkgs, old, new):
+def process(pkgs, old, new, fix=False):
 	total_upd = 0
 	total_pkg = 0
 
@@ -44,7 +44,8 @@ def process(pkgs, old, new):
 				sys.stderr.write('%s\r' % ANSI.clear_line)
 				print(p.slotted_atom)
 
-				if isinstance(guess_package_type(p), PkgType.python_r1):
+				if fix and isinstance(guess_package_type(p),
+						PkgType.python_r1):
 					try:
 						add_impl_to_ebuild(p.path, new.r1_name)
 					except Exception as e:
@@ -55,18 +56,26 @@ def process(pkgs, old, new):
 			% (ANSI.clear_line, ANSI.white, ANSI.reset))
 
 def main(prog_name, *argv):
+	opt = optparse.OptionParser(
+		prog = prog_name,
+		usage = '%prog <old-impl> <new-impl> [<packages>...]')
+	opt.add_option('-f', '--fix', action='store_true',
+			dest='fix', default=False,
+			help='Automatically add <new-impl> to PYTHON_COMPAT')
+	vals, argv = opt.parse_args(list(argv))
+
 	if len(argv) < 2:
-		sys.stderr.write('Usage: %s <old-impl> <new-impl> [<packages>...]\n' % prog_name)
-		return 1
+		opt.error('Two implementations need to be provided')
 
 	old = get_impl_by_name(argv[0])
 	new = get_impl_by_name(argv[1])
 
 	if len(argv) == 2:
-		process(pm.repositories['gentoo'], old, new)
+		process(pm.repositories['gentoo'], old, new, fix=vals.fix)
 	else:
 		for pkg in argv[2:]:
-			process(pm.repositories['gentoo'].filter(pkg), old, new)
+			process(pm.repositories['gentoo'].filter(pkg), old, new,
+				fix=vals.fix)
 
 	return 0
 
