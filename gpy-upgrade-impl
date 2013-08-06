@@ -62,6 +62,9 @@ def main(prog_name, *argv):
 	opt.add_option('-f', '--fix', action='store_true',
 			dest='fix', default=False,
 			help='Automatically add <new-impl> to PYTHON_COMPAT')
+	opt.add_option('-r', '--repo',
+			dest='repo', default='gentoo',
+			help='Work on given repository (default: gentoo)')
 	vals, argv = opt.parse_args(list(argv))
 
 	if len(argv) < 2:
@@ -71,10 +74,10 @@ def main(prog_name, *argv):
 	new = get_impl_by_name(argv[1])
 
 	if len(argv) == 2:
-		process(pm.repositories['gentoo'], old, new, fix=vals.fix)
+		process(pm.repositories[vals.repo], old, new, fix=vals.fix)
 	else:
 		for pkg in argv[2:]:
-			process(pm.repositories['gentoo'].filter(pkg), old, new,
+			process(pm.repositories[vals.repo].filter(pkg), old, new,
 				fix=vals.fix)
 
 	return 0
