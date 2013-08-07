@@ -9,7 +9,7 @@ from gpyutils.ansi import ANSI
 from gpyutils.eclasses import guess_package_type, PkgType
 from gpyutils.implementations import get_python_impls, get_impl_by_name
 from gpyutils.packages import group_packages
-from gpyutils.pycompat import add_impl_to_ebuild
+from gpyutils.pycompat import EbuildMangler
 
 import optparse, sys
 
@@ -47,7 +47,8 @@ def process(pkgs, old, new, fix=False):
 				if fix and isinstance(guess_package_type(p),
 						PkgType.python_r1):
 					try:
-						add_impl_to_ebuild(p.path, new.r1_name)
+						with EbuildMangler(p.path) as em:
+							em.add(new.r1_name)
 					except Exception as e:
 						sys.stderr.write('%s%s%s\n'
 								% (ANSI.brown, str(e), ANSI.reset))

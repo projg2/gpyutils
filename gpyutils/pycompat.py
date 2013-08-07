@@ -87,22 +87,39 @@ def add_impl(s, new):
 
 python_compat_re = re.compile(r'(?<![^\n])PYTHON_COMPAT=\((?P<value>.*)\)')
 
-def add_impl_to_ebuild(path, impl):
-	with open(path, 'rb') as f:
-		data = f.read().decode('utf8')
+class EbuildMangler(object):
+	def __init__(self, path):
+		with open(path, 'rb') as f:
+			data = f.read().decode('utf8')
 
-	m = python_compat_re.search(data)
-	if m:
-		new_value = add_impl(m.group('value'), impl)
-		data = ''.join((data[:m.start()],
-			'PYTHON_COMPAT=(', new_value, ')',
-			data[m.end():]))
+		m = python_compat_re.search(data)
+		if m:
+			self._path = path
+			self._data = data
+			self._value = m.group('value')
+			self._start = m.start()
+			self._end = m.end()
+		else:
+			raise KeyError('Unable to find PYTHON_COMPAT in %s' % path)
 
-		with tempfile.NamedTemporaryFile('wb', dir=os.path.dirname(path),
-				delete=False) as f:
+	def write(self):
+		data = ''.join((self._data[:self._start],
+			'PYTHON_COMPAT=(', self._value, ')',
+			self._data[self._end:]))
+
+		with tempfile.NamedTemporaryFile('wb',
+				dir=os.path.dirname(self._path), delete=False) as f:
 			tmp_path = f.name
 			f.write(data.encode('utf8'))
 
-		os.rename(tmp_path, path)
-	else:
-		raise KeyError('Unable to find PYTHON_COMPAT in %s' % path)
+		os.rename(tmp_path, self._path)
+
+	def __enter__(self):
+		return self
+
+	def __exit__(self, exc_type, exc_value, traceback):
+		if exc_type is None:
+			self.write()
+
+	def add(self, impl):
+		self._value = add_impl(self._value, impl)
