@@ -85,6 +85,74 @@ def add_impl(s, new):
 
 	return add_sorted(s, new)
 
+def del_impl(s, old):
+	"""
+	>>> del_impl('python2_6 python2_7 python3_2 pypy1_9', 'python2_6')
+	'python2_7 python3_2 pypy1_9'
+	>>> del_impl('python2_{6,7} python3_{1,2}', 'python2_6')
+	'python2_7 python3_{1,2}'
+	>>> del_impl('python2_{6,7} python3_{1,2,3}', 'python3_1')
+	'python2_{6,7} python3_{2,3}'
+	>>> del_impl('python{2_6,2_7,3_2} pypy1_9', 'python2_6')
+	'python{2_7,3_2} pypy1_9'
+	>>> del_impl('python{2_6,2_7} pypy1_9', 'python2_6')
+	'python2_7 pypy1_9'
+	>>> del_impl(' python2_6 python2_7 ', 'python2_6')
+	' python2_7 '
+	>>> del_impl(' python2_6 python2_7 ', 'python2_7')
+	' python2_6 '
+	>>> del_impl(' python2_6 python2_7 python3_2 ', 'python2_7')
+	' python2_6 python3_2 '
+	"""
+	m = None
+
+	# first, try pythonX_{Y,Z}
+	lhs, rhs = old.split('_')
+	lhs += '_'
+	# try to find pythonX_
+	m1_re = re.compile(r'(?<!\S)%s{(?P<value>.*?)}(?!\S)'
+			% re.escape(lhs))
+	m = m1_re.search(s)
+
+	if not m:
+		# then, python{X_Y,X_Z}
+		split_re = re.compile(r'^\D+')
+		m = split_re.match(old)
+		lhs = m.group(0)
+		rhs = old[m.end():]
+
+		m2_re = re.compile(r'(?<!\S)%s{(?P<value>.*?)}(?!\S)'
+				% re.escape(lhs))
+		m = m2_re.search(s)
+
+	if m:
+		# in one of the groups
+		impls = m.group('value').split(',')
+		if rhs in impls:
+			impls.remove(rhs)
+
+		if len(impls) > 1:
+			new_i = '%s{%s}' % (lhs, ','.join(impls))
+		else:
+			new_i = '%s%s' % (lhs, impls[0])
+
+		return ''.join((s[:m.start()], new_i, s[m.end():]))
+
+	# in global scope?
+	m3_re = re.compile(r'(?<!\S)%s(?!\S)' % re.escape(old))
+	m = m3_re.search(s)
+	if m:
+		st = m.start()
+		end = m.end()
+		if st > 1:
+			st -= 1
+		elif end < len(s) - 1:
+			end += 1
+
+		return ''.join((s[:st], s[end:]))
+
+	return s
+
 python_compat_re = re.compile(r'(?<![^\n])PYTHON_COMPAT=\((?P<value>.*)\)')
 
 class EbuildMangler(object):
@@ -123,3 +191,6 @@ class EbuildMangler(object):
 
 	def add(self, impl):
 		self._value = add_impl(self._value, impl)
+
+	def remove(self, impl):
+		self._value = del_impl(self._value, impl)
