@@ -6,14 +6,17 @@
 from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
-from gpyutils.implementations import implementations, get_python_impls
+from gpyutils.implementations import (implementations,
+		get_python_impls, Status)
 from gpyutils.packages import group_packages
 
 import sys
 
 pm = get_package_manager()
 
-keys = [i.short_name for i in implementations]
+# omit dead impls since they get ignored anyway
+my_impls = [i for i in implementations if i.status != Status.dead]
+keys = [i.short_name for i in my_impls]
 
 def process(pkgs):
 	for pg in group_packages(pkgs.sorted, 'slotted_atom'):
@@ -26,8 +29,9 @@ def process(pkgs):
 				# not a python package
 				continue
 			for i in impls:
-				output[keys.index(i.short_name)] = ('%s%s%s'
-					% (i.status.color, i.short_name, ANSI.reset))
+				if i in my_impls:
+					output[keys.index(i.short_name)] = ('%s%s%s'
+						% (i.status.color, i.short_name, ANSI.reset))
 
 			print('%16s: %s' % (p.version, ' '.join(output)))
 
