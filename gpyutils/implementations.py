@@ -6,6 +6,8 @@ from .ansi import ANSI
 from .eclasses import guess_package_type, PkgType
 from .util import EnumObj
 
+import fnmatch
+
 class Status(object):
 	class dead(EnumObj(1)):
 		color = ANSI.red
@@ -73,7 +75,8 @@ class PythonR0Impls(PythonImpls):
 		self._restrict = pkg.environ['RESTRICT_PYTHON_ABIS'].split()
 
 	def __contains__(self, i):
-		return i.r0_name not in self._restrict
+		return not any(fnmatch.fnmatch(i.r0_name, r)
+				for r in self._restrict)
 
 def get_python_impls(pkg):
 	t = guess_package_type(pkg, check_deps=False)
