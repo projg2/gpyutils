@@ -7,7 +7,7 @@ from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
 from gpyutils.implementations import (implementations,
-		get_python_impls, Status)
+		get_python_impls, Status, PythonR0Impls)
 from gpyutils.packages import group_packages
 
 import sys
@@ -33,7 +33,12 @@ def process(pkgs):
 					output[keys.index(i.short_name)] = ('%s%s%s'
 						% (i.status.color, i.short_name, ANSI.reset))
 
-			print('%16s: %s' % (p.version, ' '.join(output)))
+			if isinstance(impls, PythonR0Impls):
+				eclass_tag = ANSI.gray + '*' + ANSI.reset
+			else:
+				eclass_tag = ' '
+
+			print('%16s: %s %s' % (p.version, eclass_tag, ' '.join(output)))
 
 def main(prog_name, *argv):
 	if not argv:
