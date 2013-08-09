@@ -55,26 +55,22 @@ def get_impl_by_name(name):
 			return i
 	raise KeyError(name)
 
-class PythonR1Impls(object):
-	def __init__(self, pkg):
-		self._impls = pkg.environ['PYTHON_COMPAT[*]'].split()
-
+class PythonImpls(object):
 	def __iter__(self):
 		for i in implementations:
-			if i.r1_name in self._impls:
+			if i in self:
 				yield i
+
+class PythonR1Impls(PythonImpls):
+	def __init__(self, pkg):
+		self._impls = pkg.environ['PYTHON_COMPAT[*]'].split()
 
 	def __contains__(self, i):
 		return i.r1_name in self._impls
 
-class PythonR0Impls(object):
+class PythonR0Impls(PythonImpls):
 	def __init__(self, pkg):
 		self._restrict = pkg.environ['RESTRICT_PYTHON_ABIS'].split()
-
-	def __iter__(self):
-		for i in implementations:
-			if i.r0_name not in self._restrict:
-				yield i
 
 	def __contains__(self, i):
 		return i.r0_name not in self._restrict
