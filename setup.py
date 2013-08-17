@@ -16,7 +16,7 @@ setup(
 		scripts = [
 			'gpy-counts',
 			'gpy-depcands',
-#			'gpy-depcheck',
+			'gpy-depcheck',
 			'gpy-showimpls',
 			'gpy-upgrade-impl',
 		],

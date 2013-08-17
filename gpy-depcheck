@@ -5,107 +5,110 @@
 
 # Note: this tool is temporarily unmaintained.
 
-from gentoopm.pkgcorepm import PkgCorePM
-from gentoopm.pkgcorepm.atom import PkgCoreAtom
+from gentoopm import get_package_manager
+from gentoopm.basepm.atom import PMAtom
 
+from gpyutils.ansi import ANSI
+from gpyutils.eclasses import guess_package_type, PkgType
+from gpyutils.packages import group_packages
+
+import re
 import sys
 
-pm = PkgCorePM()
+pm = get_package_manager()
 
-class PkgType(object):
-	class other(object):
-		def __gt__(self, other):
-			return False
+def process(pkgs, repo):
+	usedep_re = re.compile(r'^(?P<pkg>[^\[]*)(?:\[(?P<flags>[^:]*)\])?(?:::.*)?$')
 
-		def __ge__(self, other):
-			return other is PkgType.other
+	sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
+			% (ANSI.clear_line, ANSI.brown, ANSI.reset))
 
-	class multi(object):
-		def __gt__(self, other):
-			return other is PkgType.other
+	total_need = 0
+	total_pkg = 0
 
-		def __ge__(self, other):
-			return other is PkgType.other or other is PkgType.multi
+	dep_cache = {}
 
-	class single(object):
-		def __gt__(self, other):
-			return other is not PkgType.single
+	for pg in group_packages(pkgs):
+		sys.stderr.write('%s%s%-40s%s (%s%4d%s of %s%4d%s potentially broken)\r'
+				% (ANSI.clear_line, ANSI.green, pg[0].key, ANSI.reset,
+					ANSI.white, total_need, ANSI.reset,
+					ANSI.white, total_pkg, ANSI.reset))
 
-		def __ge__(self, other):
-			return True
+		any_r1 = False
+		for p in pg:
+			t = guess_package_type(p)
+			if not isinstance(t, PkgType.python_r1):
+				continue
+			any_r1 = True
 
-	def __new__(cls, pkg):
-		if 'python-r1' in pkg.inherits:
-			return cls.multi
-		elif 'python-single-r1' in pkg.inherits:
-			return cls.single
-		else:
-			return cls.other
-
-	@classmethod
-	def from_flag(cls, f):
-		if f.startswith('python_targets'):
-			return cls.multi
-		elif f.startswith('python_single_target'):
-			return cls.single
-		else:
-			return cls.other
-
-	@classmethod
-	def from_dep(cls, dep):
-		# XXX: support other PMs than pkgcore
-		return max([cls.from_flag(f) for f in dep._r.use or ('',)])
-
-def process(pkgs):
-	for p in pkgs:
-		t = PkgType(p)
-		if t is PkgType.other:
-			continue
-
-		listed_deps = []
-		def check_dep(dep):
-			if isinstance(dep, PkgCoreAtom):
-				if dep.blocking:
-					return
-				if dep in listed_deps:
-					return
-				dep_type = PkgType.from_dep(dep)
-				if dep_type != PkgType.other:
-					return
-
-				# USE deps cause problems with matching, strip them
-				dep = pm.Atom(str(dep).partition('[')[0])
-
-				pkgs = list(pm.repositories['gentoo'].filter(dep))
-				if not pkgs:
-					print('%s: no package matches %s' % (p, dep))
-					return
-
-				dep_pkg_type = max([PkgType(x) for x in pkgs])
-				if dep_type >= dep_pkg_type:
-					return
-
-				if dep_type is PkgType.multi:
-					print('%s: must not depend on python-single-r1 pkg %s' % (p, dep))
-				elif dep_type is PkgType.other:
-					print('%s: needs PYTHON_USEDEP on %s' % (p, dep))
+			found_missing = []
+			def check_dep(dep):
+				if not isinstance(dep, PMAtom):
+					for dp in dep:
+						check_dep(dp)
 				else:
-					raise AssertionError('Unknown bad dep?')
+					if dep.blocking:
+						return
+					# skip duplicates
+					if dep in found_missing:
+						return
 
-				listed_deps.append(dep)
-			else:
-				for dp in dep:
-					check_dep(dp)
+					# please close your eyes, it's ugly. really.
+					m = usedep_re.match(str(dep))
+					flags = (m.group('flags') or '').split(',')
+					for f in flags:
+						if f.startswith('python_targets_'):
+							# ok, dep's there
+							return
 
-		for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
-			check_dep(d)
+					sdep = pm.Atom(m.group('pkg'))
+
+					if not sdep in dep_cache:
+						pkgs = list(repo.filter(sdep))
+						if not pkgs:
+							sys.stderr.write('%s%s: no package matches %s%s\n'
+									% (ANSI.brown, p, sdep, ANSI.reset))
+							return
+
+						dep_pkg_type = max([guess_package_type(x, check_deps=False)
+								for x in pkgs])
+						dep_cache[sdep] = dep_pkg_type
+					else:
+						dep_pkg_type = dep_cache[sdep]
+
+					if isinstance(dep_pkg_type, PkgType.python_r1):
+						sys.stderr.write('%s\r' % ANSI.clear_line)
+						if not found_missing:
+							print(p)
+						print('\t%s' % dep)
+
+						sys.stderr.write('%s%s%-40s%s (%s%4d%s of %s%4d%s potentially broken)\r'
+								% (ANSI.clear_line, ANSI.green, pg[0].key, ANSI.reset,
+									ANSI.white, total_need, ANSI.reset,
+									ANSI.white, total_pkg, ANSI.reset))
+
+						found_missing.append(dep)
+
+			for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
+				check_dep(d)
+			if found_missing:
+				total_need += 1
+				break
+
+		if any_r1:
+			total_pkg += 1
+
+	sys.stderr.write('%s%sDone.%s\n'
+			% (ANSI.clear_line, ANSI.white, ANSI.reset))
 
 def main(prog_name, *argv):
+	repo = pm.repositories['gentoo']
+
 	if not argv:
-		process(pm.repositories['gentoo'])
+		process(repo, repo=repo)
 	else:
 		for pkg in argv:
-			process(pm.repositories['gentoo'].filter(pkg))
+			process(repo.filter(pkg), repo=repo)
 
 	return 0
 
