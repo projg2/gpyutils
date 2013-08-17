@@ -72,22 +72,22 @@ class PkgType(object):
 			self.subtype = subtype
 
 def guess_package_type(pkg, check_deps=True):
-		# first check for -r1
-		# it's easy since every subtype can be recognized using inherit
-		for s in PkgSubType.all_subtypes:
-			if s.eclass_r1 in pkg.inherits:
-				return PkgType.python_r1(s)
+	# first check for -r1
+	# it's easy since every subtype can be recognized using inherit
+	for s in PkgSubType.all_subtypes:
+		if s.eclass_r1 in pkg.inherits:
+			return PkgType.python_r1(s)
 
-		if 'python' in pkg.inherits:
-			if 'distutils' in pkg.inherits:
-				return PkgType.python_r0(PkgSubType.distutils)
-			else:
-				# subtype check involves running bash
-				# so better keep it lazy
-				return PkgType.python_r0(pkg, lazy=True)
-		elif check_deps and (has_python_in_deptree(pkg.run_dependencies)
-				or has_python_in_deptree(pkg.post_dependencies)
-				or has_python_in_deptree(pkg.build_dependencies)):
-			return PkgType.python_r0(PkgSubType.python_any)
+	if 'python' in pkg.inherits:
+		if 'distutils' in pkg.inherits:
+			return PkgType.python_r0(PkgSubType.distutils)
 		else:
-			return PkgType.non_python()
+			# subtype check involves running bash
+			# so better keep it lazy
+			return PkgType.python_r0(pkg, lazy=True)
+	elif check_deps and (has_python_in_deptree(pkg.run_dependencies)
+			or has_python_in_deptree(pkg.post_dependencies)
+			or has_python_in_deptree(pkg.build_dependencies)):
+		return PkgType.python_r0(PkgSubType.python_any)
+	else:
+		return PkgType.non_python()
