@@ -1,0 +1,116 @@
+gpyutils
+========
+
+
+gpy-counts
+----------
+
+gpy-counts provides a few statistical numbers regarding conversion
+of scripts to python-r1 eclasses. For each package in the repository,
+it checks whether and which eclasses are used in the ebuilds, and which
+of the ebuilds went stable.
+
+For each of the four kinds of Python packages (the four -r1 eclasses),
+it provides three numbers:
+
+- the number of packages which are fully converted, that is there is
+  at least a single -r1 ebuild and either it is stable or the package
+  has no stable keywords at all,
+
+- the number of packages which were converted disregarding keywords,
+  that is there is at least a single -r1 ebuild,
+
+- the total number of Python packages.
+
+Those numbers are output as CSS which -- when put in html/ -- gives
+shiny progress bars in ``html/conversion.xhtml``.
+
+The scan is done per-repository.
+
+
+gpy-depcands
+------------
+
+gpy-depcands searches the tree for urgent -r1 conversion candidates.
+It checks the dependencies of already-converted packages and recursively
+lists their Python dependencies that haven't been converted to the new
+eclass yet.
+
+The output consists of the -r1 package followed by an indented tree
+of dependencies needing to be converted.
+
+The scan can be done per-repository or per-package, if package atoms
+are passed on the command-line. In the latter case, every listed package
+is assumed to be -r1, therefore making it possible to use the script to
+scan dependencies of a package you're planning to convert.
+
+
+gpy-depcheck
+------------
+
+gpy-depcheck scans the tree for -r1 packages that do not use
+``[${PYTHON_USEDEP}]`` on their -r1 dependencies. The intention of this
+script is to catch missing USE-dependencies but with the current design
+it can't distinguish between dependency omitted mistakenly
+and intentionally (unnecessary).
+
+The output consists of the -r1 package followed by an indented list
+of its dependencies that lack ``[${PYTHON_USEDEP}]``.
+
+The scan can done per-repository or per-package.
+
+
+gpy-drop-dead-impls
+-------------------
+
+gpy-drop-dead-impls scans the tree for -r1 packages that are listing
+obsolete Python implementations in ``PYTHON_COMPAT``. The script can
+optionally automatically remove those implementations from ebuilds.
+
+The output is a plain list of packages. If ``--fix`` is used, script
+can also modify ebuilds.
+
+The scan can be done per-repository or per-package.
+
+
+gpy-showimpls
+-------------
+
+gpy-showimpls lists the implementations supported by various versions
+of a package in a table. It is similar to eshowkw in that regard.
+
+The output for each package slot consists of the package slot name
+followed by a table listing supported implementations. Supported
+implementations are color-coded for their importance. Unsupported are
+simply not listed.
+
+Asterisk following the package version denotes that the particular
+version is using the -r0 eclass, therefore untested implementations were
+enabled by default and some of them may not actually work.
+
+The scan can be done per-package only.
+
+
+gpy-upgrade-impl
+----------------
+
+gpy-upgrade-impl is intended to help when considering 'upgrading'
+the default Python implementations. Given two implementations (the old
+one and the new one), it scans the tree for packages that support
+the old implementation but do not support the new one.
+
+For example, ``gpy-upgrade-impl python{3_2,3_3}`` will list all packages
+that support Python 3.2 but do not work with Python 3.3.
+
+Optionally, it may automatically add the new implementation
+to ``PYTHON_COMPAT`` (-r1 packages only). Please remember to read/test
+the ebuild afterwards since the implementation may have been omitted
+intentionally and the Python package may require patching.
+
+The output is a plain list of packages. If ``--fix`` is used, script
+can also modify ebuilds.
+
+The scan can be done per-repository or per-package.
+
+
+.. vim:tw=72:ft=rst:spell:spelllang=en
