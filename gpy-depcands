@@ -9,25 +9,31 @@ from gentoopm.exceptions import EmptyPackageSetError
 
 from gpyutils.ansi import ANSI
 from gpyutils.eclasses import guess_package_type, PkgType
+from gpyutils.packages import group_packages
 
 import optparse, sys
 
 pm = get_package_manager()
 
-def process(pkgs, output, assume_r1 = False):
+def group_packages_if(pkgs, cond, **kwargs):
+	if cond:
+		for pg in group_packages(pkgs, **kwargs):
+			yield pg
+	else:
+		for p in pkgs:
+			yield [p]
+
+def process(pkgs, output, assume_r1=False, list_all=False):
 	sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
 			% (ANSI.clear_line, ANSI.brown, ANSI.reset))
 
 	total_need = [0]
 
-	for p in pkgs:
+	for pg in group_packages_if(pkgs, list_all):
+		p = pg[0]
 		sys.stderr.write('%s%s%-56s%s (%s%4d%s found)\r'
 				% (ANSI.clear_line, ANSI.green, p, ANSI.reset,
 					ANSI.white, total_need[0], ANSI.reset))
-
-		t = guess_package_type(p, check_deps=False)
-		if not assume_r1 and not isinstance(t, PkgType.python_r1):
-			continue
 
 		def check_dep(dep, total_need, depth = 0, was_first = [True],
 				curr_pkg = p):
@@ -77,6 +83,12 @@ def process(pkgs, output, assume_r1 = False):
 				for dp in dep:
 					check_dep(dp, total_need, depth, was_first, curr_pkg)
 
+		t = guess_package_type(p, check_deps=list_all)
+		if list_all and isinstance(t, PkgType.python_r0):
+			check_dep(p, total_need, depth=-1, was_first=[False])
+		if not assume_r1 and not isinstance(t, PkgType.python_r1):
+			continue
+
 		for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
 			check_dep(d, total_need)
 
@@ -87,6 +99,9 @@ def main(prog_name, *argv):
 	opt = optparse.OptionParser(
 		prog = prog_name,
 		usage = '%prog [<packages>...]')
+	opt.add_option('-a', '--all',
+			dest='list_all', default=False, action='store_true',
+			help='List all non-converted packages, not only deps of -r1 packages')
 	opt.add_option('-r', '--repo',
 			dest='repo', default='gentoo',
 			help='Work on given repository (default: gentoo)')
@@ -97,7 +112,7 @@ def main(prog_name, *argv):
 	sys.stderr.write('[note: each package is listed at most once]\n')
 
 	if not argv:
-		process(pm.repositories[vals.repo], output)
+		process(pm.repositories[vals.repo], output, list_all=vals.list_all)
 	else:
 		for pkg in argv:
 			process(pm.repositories[vals.repo].filter(pkg), output, assume_r1=True)
