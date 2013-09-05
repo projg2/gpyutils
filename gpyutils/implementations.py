@@ -33,17 +33,17 @@ class PythonImpl(object):
 
 implementations = (
 	PythonImpl('python2_4', '2.4', Status.dead),
-	PythonImpl('python2_5', '2.5', Status.old),
+	PythonImpl('python2_5', '2.5', Status.dead),
 	PythonImpl('python2_6', '2.6', Status.supported),
 	PythonImpl('python2_7', '2.7', Status.current),
 	PythonImpl('python3_0', '3.0', Status.dead),
-	PythonImpl('python3_1', '3.1', Status.old),
+	PythonImpl('python3_1', '3.1', Status.dead),
 	PythonImpl('python3_2', '3.2', Status.current),
 	PythonImpl('python3_3', '3.3', Status.supported),
 	PythonImpl('python3_4', '3.4', Status.experimental),
 
 	PythonImpl('pypy1_8', '2.7-pypy-1.8', Status.dead, 'p1.8'),
-	PythonImpl('pypy1_9', '2.7-pypy-1.8', Status.old, 'p1.9'),
+	PythonImpl('pypy1_9', '2.7-pypy-1.8', Status.dead, 'p1.9'),
 	PythonImpl('pypy2_0', '2.7-pypy-1.8', Status.supported, 'p2.0'),
 	PythonImpl('pypy2_1', '2.7-pypy-1.8', Status.experimental, 'p2.1'),
 
