@@ -17,6 +17,7 @@ setup(
 			'gpy-counts',
 			'gpy-depcands',
 			'gpy-depcheck',
+			'gpy-drop-dead-impls',
 			'gpy-showimpls',
 			'gpy-upgrade-impl',
 		],
