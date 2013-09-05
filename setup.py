@@ -7,7 +7,7 @@ from distutils.core import setup
 
 setup(
 		name = 'gpyutils',
-		version = '0.1',
+		version = '0.1.1',
 		author = 'Michał Górny',
 		author_email = 'mgorny@gentoo.org',
 		url = 'https://bitbucket.org/mgorny/gpyutils',
