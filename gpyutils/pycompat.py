@@ -4,37 +4,278 @@
 
 import os, os.path, re, tempfile
 
-def add_sorted(s, new, delim=None):
-	"""
-	Add token 'new' to the string 's' delimited using 'delim',
-	placing it before the token that sorts lexically next to it.
+class Whitespace(str):
+	def __init__(self, s):
+		self.removed = False
+		str.__init__(self)
 
-	>>> add_sorted('py2.7 py3.1 py3.3', 'py3.2')
-	'py2.7 py3.1 py3.2 py3.3'
-	>>> add_sorted('2.7,3.1,3.3', '3.2', ',')
-	'2.7,3.1,3.2,3.3'
-	"""
-	impls = s.split(delim)
+	def __repr__(self):
+		return 'Whitespace(%s)' % str.__repr__(self)
 
-	if impls:
-		impls.append(new)
-		impls.sort()
-		new_i = impls.index(new)
-		if new_i == 0:
-			return ''.join((new, delim or ' ', s))
+
+class Value(object):
+	def __init__(self, f_name, l_name=None):
+		self.full_name = f_name
+		self.local_name = l_name or f_name
+		self.removed = False
+
+	def __repr__(self):
+		return 'Value(full_name=%s, local_name=%s, removed=%s)' % (
+			self.full_name,
+			self.local_name,
+			self.removed,
+		)
+
+	def __str__(self):
+		assert(not self.removed)
+		return self.local_name
+
+
+def get_previous_val_index(l, v):
+	"""
+	Return index of value in list l that lexically precedes v,
+	or -1 if no value precedes it.
+
+	>>> get_previous_val_index([Value('a'), Value('b')], Value('c'))
+	1
+	>>> get_previous_val_index([Value('a'), Value('c')], Value('b'))
+	0
+	>>> get_previous_val_index([Value('c'), Value('a')], Value('b'))
+	1
+	>>> get_previous_val_index([Value('c'), Value('b')], Value('a'))
+	-1
+	"""
+	def sort_key(x):
+		if isinstance(x, Whitespace):
+			# sort whitespace out to the end
+			return 'Z'
+		elif isinstance(x, Value):
+			return x.local_name
 		else:
-			prev = impls[new_i-1]
-			pos = s.rfind(prev)
-			assert pos != -1
-			pos += len(prev)
-			return ''.join((s[:pos], delim or ' ', new, s[pos:]))
+			return x.local_prefix
+
+	sorted_values = sorted(l + [v], key=sort_key)
+	idx = sorted_values.index(v)
+	if idx == 0:
+		return -1
 	else:
-		return new
+		return l.index(sorted_values[idx-1])
+
+
+class Group(object):
+	def __init__(self, f_prefix, l_prefix, values):
+		self.full_prefix = f_prefix
+		self.local_prefix = l_prefix
+		self.values = values
+
+	def add_sorted(self, v):
+		self.values.insert(get_previous_val_index(self.values, v)+1, v)
+
+	@property
+	def removed(self):
+		return all([x.removed for x in self.values])
+
+	def __iter__(self):
+		for x in self.values:
+			yield x
+
+	def __repr__(self):
+		return 'Group(full_prefix=%s, local_prefix=%s, values=%s)' % (
+			self.full_prefix,
+			self.local_prefix,
+			self.values,
+		)
+
+	def __str__(self):
+		vals = [str(x) for x in self.values if not x.removed]
+
+		if len(vals) > 1:
+			vals = '{%s}' % ','.join(vals)
+		else:
+			vals = vals[0]
+
+		return ''.join((self.local_prefix, vals))
+
+
+class PythonCompat(object):
+	def __init__(self):
+		self.nodes = []
+
+	def append(self, n):
+		self.nodes.append(n)
+
+	def add(self, impl_name):
+		# first, try adding to an existing group
+		# longer groups come first, so that should be good enough
+		for g in self.groups:
+			if impl_name.startswith(g.full_prefix):
+				g.add_sorted(Value(impl_name, impl_name[len(g.full_prefix):]))
+				return
+
+		# then, try splitting something else
+		for v in reversed(sorted(self, key=lambda x: len(x.full_name))):
+			cpfx = os.path.commonprefix((impl_name, v.full_name))
+			# only those with common prefix
+			if not cpfx:
+				continue
+			# only split in global scope, don't nest
+			if v not in self.nodes:
+				continue
+			# don't split mid-version if maintainer didn't do that already
+			mid_ver_groups = [x for x in self.groups
+				if x.local_prefix.endswith('_')]
+			if cpfx[-1] == '_' and not any(mid_ver_groups):
+				continue
+
+			suff1 = v.full_name[len(cpfx):]
+			suff2 = impl_name[len(cpfx):]
+			# don't split in middle of name (e.g. py{py,thon})
+			if not suff1[0].isdigit() or not suff2[0].isdigit():
+				continue
+
+			# don't create the group if the maintainer could have created
+			# one already but didn't (so he likely doesn't want that)
+			# e.g. if he has 'python2_5 python2_6', don't do '{2_6,2_7}'
+			group_candidates = [x for x in self.nodes
+				if isinstance(x, Value) and x.full_name.startswith(cpfx)]
+			if len(group_candidates) > 1:
+				continue
+
+			v1 = Value(v.full_name, suff1)
+			v2 = Value(impl_name, suff2)
+
+			i = self.nodes.index(v)
+			self.nodes[i] = Group(cpfx, cpfx,
+					sorted([v1, v2], key=lambda x: x.local_name))
+			return
+
+		# add it (sorted!)
+		v = Value(impl_name, impl_name)
+		i = get_previous_val_index(self.nodes, v)
+
+		self.nodes.insert(i+1, v)
+		self.nodes.insert(i+1 if i != -1 else 1, Whitespace(' '))
+
+	def remove(self, impl_name):
+		for i in self:
+			if i.full_name == impl_name:
+				i.removed = True
+
+	@property
+	def groups(self):
+		def subiter(g):
+			for x in g:
+				if isinstance(x, Group):
+					for y in subiter(x):
+						yield y
+					yield x
+
+		return subiter(self.nodes)
+
+	def __iter__(self):
+		def subiter(g):
+			for x in g:
+				if isinstance(x, Group):
+					for y in subiter(x):
+						if not y.removed:
+							yield y
+				elif isinstance(x, Value):
+					if not x.removed:
+						yield x
+
+		return subiter(self.nodes)
+
+	def __repr__(self):
+		return repr(self.nodes)
+
+	def __str__(self):
+		first = True
+		for i, x in enumerate(self.nodes):
+			if not isinstance(x, Whitespace):
+				if x.removed:
+					if not first:
+						self.nodes[i-1].removed = True
+					else:
+						self.nodes[i+1].removed = True
+				first = False
+
+		return ''.join([str(x) for x in self.nodes if not x.removed])
+
+
+def parse_item(s):
+	depth = 0
+	curr = ['']
+	items = []
+	values = [[]]
+	out = []
+	had_text = []
+
+	def commit_value():
+		if had_text:
+			values[-1].append(Value(''.join(curr), curr[-1]))
+			had_text.pop()
+
+	for c in s:
+		if c == '{':
+			depth += 1
+			curr.append('')
+			values.append([])
+		elif c == '}':
+			if depth == 0:
+				raise ValueError("Unmatched closing brace '}'")
+
+			commit_value()
+			if values[-1]:
+				values[-2].append(Group(
+					''.join(curr[:-1]),
+					curr[-2],
+					values[-1],
+				))
+
+			depth -= 1
+			curr.pop()
+			values.pop()
+		elif c == ',':
+			if depth == 0:
+				raise ValueError("Comma ',' outside brace")
+			commit_value()
+			curr[-1] = ''
+		else:
+			had_text = [True]
+			curr[-1] += c
+
+	if depth != 0:
+		raise ValueError("Unmatched opening brace '{'")
+	commit_value()
+
+	return values[0][0]
+
+
+ws_split_re = re.compile(r'(\s+)')
+
+def parse(s):
+	out = PythonCompat()
+
+	data = ws_split_re.split(s)
+	for i, w in enumerate(data):
+		if not w:
+			pass
+		elif i % 2:
+			# 1, 3, 5 are whitespace
+			out.append(Whitespace(w))
+		else:
+			# 0, 2, 4 are the real deal
+			out.append(parse_item(w))
+
+	return out
+
 
 def add_impl(s, new):
 	"""
 	>>> add_impl('pypy1_9', 'python3_3')
 	'pypy1_9 python3_3'
+	>>> add_impl('python2_7', 'pypy2_0')
+	'pypy2_0 python2_7'
 	>>> add_impl('python2_6 python2_7 python3_2 pypy1_9', 'python3_3')
 	'python2_6 python2_7 python3_2 python3_3 pypy1_9'
 	>>> add_impl('python2_6 python2_7 python3_4 pypy1_9', 'python3_3')
@@ -53,37 +294,19 @@ def add_impl(s, new):
 	'python{2_7,3_3} pypy{1_9,2_0}'
 	>>> add_impl('python2_7', 'python3_3')
 	'python{2_7,3_3}'
+	>>> add_impl('python{2_{5,6},3_{1,2}} pypy{1_9,2_0}', 'python3_3')
+	'python{2_{5,6},3_{1,2,3}} pypy{1_9,2_0}'
+	>>> add_impl('python{2_{5,6},3_{1,2}} pypy{1_9,2_0}', 'python2_7')
+	'python{2_{5,6,7},3_{1,2}} pypy{1_9,2_0}'
+	>>> add_impl('python{2_{5,6},3_{1,2}} pypy{1_9,2_0}', 'pypy1_8')
+	'python{2_{5,6},3_{1,2}} pypy{1_8,1_9,2_0}'
+	>>> add_impl('python{2_{5,6},3_{1,2}} pypy{1_9,2_0}', 'python4_0')
+	'python{2_{5,6},3_{1,2},4_0} pypy{1_9,2_0}'
 	"""
-	m = None
+	pc = parse(s)
+	pc.add(new)
+	return str(pc)
 
-	# was anything split on _? if yes, use that syntax
-	if '_{' in s:
-		lhs, rhs = new.split('_')
-		lhs += '_'
-		# try to find pythonX_
-		m1_re = re.compile(r'(?<!\S)%s{?(?P<value>.*?)}?(?!\S)'
-				% re.escape(lhs))
-		m = m1_re.search(s)
-
-	if not m and (len(s.split()) == 1 or '{' in s):
-		# then, python{X_Y,X_Z}
-		# note: we use this also if there's just one 'pythonX_Y'
-		# as a sane default
-		split_re = re.compile(r'^\D+')
-		m = split_re.match(new)
-		lhs = m.group(0)
-		rhs = new[m.end():]
-
-		m2_re = re.compile(r'(?<!\S)%s{?(?P<value>.*?)}?(?!\S)'
-				% re.escape(lhs))
-		m = m2_re.search(s)
-
-	if m:
-		new_value = add_sorted(m.group('value'), rhs, ',')
-		new_i = '%s{%s}' % (lhs, new_value)
-		return ''.join((s[:m.start()], new_i, s[m.end():]))
-
-	return add_sorted(s, new)
 
 def del_impl(s, old):
 	"""
@@ -103,55 +326,15 @@ def del_impl(s, old):
 	' python2_6 '
 	>>> del_impl(' python2_6 python2_7 python3_2 ', 'python2_7')
 	' python2_6 python3_2 '
+	>>> del_impl(' python{2_{5,6,7},3_{1,2,3}} pypy{1_{8,9},2_0} ', 'python2_5')
+	' python{2_{6,7},3_{1,2,3}} pypy{1_{8,9},2_0} '
+	>>> del_impl(' python{2_{5,6,7},3_{1,2,3}} pypy{1_{8,9},2_0} ', 'pypy1_8')
+	' python{2_{5,6,7},3_{1,2,3}} pypy{1_9,2_0} '
 	"""
-	m = None
+	pc = parse(s)
+	pc.remove(old)
+	return str(pc)
 
-	# first, try pythonX_{Y,Z}
-	lhs, rhs = old.split('_')
-	lhs += '_'
-	# try to find pythonX_
-	m1_re = re.compile(r'(?<!\S)%s{(?P<value>.*?)}(?!\S)'
-			% re.escape(lhs))
-	m = m1_re.search(s)
-
-	if not m:
-		# then, python{X_Y,X_Z}
-		split_re = re.compile(r'^\D+')
-		m = split_re.match(old)
-		lhs = m.group(0)
-		rhs = old[m.end():]
-
-		m2_re = re.compile(r'(?<!\S)%s{(?P<value>.*?)}(?!\S)'
-				% re.escape(lhs))
-		m = m2_re.search(s)
-
-	if m:
-		# in one of the groups
-		impls = m.group('value').split(',')
-		if rhs in impls:
-			impls.remove(rhs)
-
-		if len(impls) > 1:
-			new_i = '%s{%s}' % (lhs, ','.join(impls))
-		else:
-			new_i = '%s%s' % (lhs, impls[0])
-
-		return ''.join((s[:m.start()], new_i, s[m.end():]))
-
-	# in global scope?
-	m3_re = re.compile(r'(?<!\S)%s(?!\S)' % re.escape(old))
-	m = m3_re.search(s)
-	if m:
-		st = m.start()
-		end = m.end()
-		if st > 1:
-			st -= 1
-		elif end < len(s) - 1:
-			end += 1
-
-		return ''.join((s[:st], s[end:]))
-
-	return s
 
 python_compat_re = re.compile(r'(?<![^\n])PYTHON_COMPAT=\((?P<value>.*)\)')
 
@@ -164,7 +347,7 @@ class EbuildMangler(object):
 		if m:
 			self._path = path
 			self._data = data
-			self._value = m.group('value')
+			self._value = parse(m.group('value'))
 			self._start = m.start()
 			self._end = m.end()
 		else:
@@ -172,7 +355,7 @@ class EbuildMangler(object):
 
 	def write(self):
 		data = ''.join((self._data[:self._start],
-			'PYTHON_COMPAT=(', self._value, ')',
+			'PYTHON_COMPAT=(', str(self._value), ')',
 			self._data[self._end:]))
 
 		with tempfile.NamedTemporaryFile('wb',
@@ -190,7 +373,7 @@ class EbuildMangler(object):
 			self.write()
 
 	def add(self, impl):
-		self._value = add_impl(self._value, impl)
+		self._value.add(impl)
 
 	def remove(self, impl):
-		self._value = del_impl(self._value, impl)
+		self._value.remove(impl)
