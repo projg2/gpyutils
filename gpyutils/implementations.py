@@ -46,6 +46,7 @@ implementations = (
 	PythonImpl('pypy1_9', '2.7-pypy-1.9', Status.dead, 'p1.9'),
 	PythonImpl('pypy2_0', '2.7-pypy-2.0', Status.supported, 'p2.0'),
 	PythonImpl('pypy', '2.7-pypy-2.1', Status.experimental, 'pypy'),
+	PythonImpl('pypy3', '3.2-pypy-2.1', Status.experimental, 'pypy3'),
 
 	PythonImpl('jython2_5', '2.5-jython', Status.dead, 'j2.5'),
 	PythonImpl('jython2_7', '2.7-jython', Status.experimental, 'j2.7'),
