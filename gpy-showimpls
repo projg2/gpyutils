@@ -9,7 +9,7 @@ from gpyutils.ansi import ANSI
 from gpyutils.eclasses import guess_package_type, PkgType, PkgSubType
 from gpyutils.implementations import (implementations,
 		get_python_impls, read_implementations, Status, PythonR0Impls)
-from gpyutils.packages import group_packages
+from gpyutils.packages import get_package_class, group_packages, PackageClass
 
 import sys
 
@@ -38,17 +38,24 @@ def process(pkgs):
 						% (i.status.color, i.short_name, ANSI.reset))
 
 			if ptype == PkgType.python_r0:
-				eclass_tag = '*'
+				eclass_tag = ANSI.gray + '*' + ANSI.reset
 			elif ptype.subtype == PkgSubType.python_single:
-				eclass_tag = 's'
+				eclass_tag = ANSI.cyan + 's' + ANSI.reset
 			elif ptype.subtype == PkgSubType.python_any:
-				eclass_tag = 'a'
+				eclass_tag = ANSI.brown + 'a' + ANSI.reset
 			else:
 				eclass_tag = ' '
 
-			print('%16s: %s%s%s %s' % (p.version,
-				ANSI.gray, eclass_tag, ANSI.reset,
-				' '.join(output)))
+			pclass = get_package_class(p)
+			if pclass == PackageClass.stable:
+				keyw_tag = ANSI.green + 's' + ANSI.reset
+			elif pclass == PackageClass.testing:
+				keyw_tag = ANSI.brown + '~' + ANSI.reset
+			else:
+				keyw_tag = ' '
+
+			print('%16s: %s %s %s' % (p.version, keyw_tag,
+				eclass_tag, ' '.join(output)))
 
 def main(prog_name, *argv):
 	if not argv:
