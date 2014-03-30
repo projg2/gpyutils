@@ -16,7 +16,8 @@ pm = get_package_manager()
 read_implementations(pm)
 
 # omit dead impls since they get ignored anyway
-my_impls = [i for i in implementations if i.status != Status.dead]
+my_impls = [i for i in implementations
+		if i.status not in (Status.dead, Status.future)]
 keys = [i.short_name for i in my_impls]
 
 def process(pkgs):

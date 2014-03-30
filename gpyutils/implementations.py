@@ -24,12 +24,16 @@ class Status(object):
 	class experimental(EnumObj(5)):
 		color = ANSI.purple
 
+	class future(EnumObj(6)):
+		color = ANSI.cyan
+
 	mapping = {
 		'dead': dead,
 		'old': old,
 		'supported': supported,
 		'current': current,
 		'experimental': experimental,
+		'future': future,
 	}
 
 
