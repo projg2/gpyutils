@@ -13,12 +13,13 @@ import sys
 
 from gpyutils.ansi import ANSI
 from gpyutils.eclasses import guess_package_type, PkgType
-from gpyutils.packages import group_packages
+from gpyutils.packages import get_package_class, group_packages, PackageClass
 
 pm = get_package_manager()
 
 def is_stable(p):
-	return any([x[0] not in ('~', '-') for x in p.keywords])
+	return get_package_class(p) == PackageClass.stable
+
 
 def process(pkgs):
 	prev_key = None
@@ -46,7 +47,8 @@ def process(pkgs):
 		for p in pg:
 			t = guess_package_type(p)
 			if not isinstance(t, PkgType.non_python):
-				kinds[t.subtype][t] = bool(kinds[t.subtype][t]) | is_stable(p)
+				kinds[t.subtype][t] = (bool(kinds[t.subtype][t])
+						| (get_package_class(p) == PackageClass.stable))
 
 		# some packages fit more than one category
 		# e.g. p.eclass supported single impl, p-r1 supports many
