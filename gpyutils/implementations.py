@@ -97,7 +97,10 @@ class PythonR0Impls(PythonImpls):
 		self._restrict = pkg.environ['RESTRICT_PYTHON_ABIS'].split()
 
 	def __contains__(self, i):
-		return not any(fnmatch.fnmatch(i.r0_name, r)
+		# the implementation is unsupported if either:
+		# 1. eclass does not support it (r0_name is '')
+		# 2. it is listed in RESTRICT_PYTHON_ABIS
+		return i.r0_name and not any(fnmatch.fnmatch(i.r0_name, r)
 				for r in self._restrict)
 
 def get_python_impls(pkg):
