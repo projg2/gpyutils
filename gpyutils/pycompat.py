@@ -302,6 +302,10 @@ def add_impl(s, new):
 	'python{2_{5,6},3_{1,2}} pypy{1_8,1_9,2_0}'
 	>>> add_impl('python{2_{5,6},3_{1,2}} pypy{1_9,2_0}', 'python4_0')
 	'python{2_{5,6},3_{1,2},4_0} pypy{1_9,2_0}'
+	>>> add_impl('python{2_6,2_7,3_2,3_3} pypy2_0', 'jython2_7')
+	'jython2_7 python{2_6,2_7,3_2,3_3} pypy2_0'
+	>>> add_impl('python{2_6,2_7,3_2,3_3} pypy2_0', 'pypy')
+	'python{2_6,2_7,3_2,3_3} pypy{,2_0}'
 	"""
 	pc = parse(s)
 	pc.add(new)
