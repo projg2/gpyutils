@@ -6,6 +6,7 @@ class ANSI(object):
 	clear_line = '\033[2K'
 	reset = '\033[0m'
 	brown = '\033[33m'
+	cyan = '\033[36m'
 	gray = '\033[37m'
 	green = '\033[32m'
 	bgreen = '\033[1;32m'
