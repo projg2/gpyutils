@@ -3,7 +3,33 @@
 # (c) 2013 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
-from distutils.core import setup
+from distutils.core import setup, Command
+
+
+class TestCommand(Command):
+	description = 'run tests'
+	user_options = []
+
+	def initialize_options(self):
+		self.build_base = None
+		self.build_lib = None
+
+	def finalize_options(self):
+		self.set_undefined_options('build',
+			('build_lib', 'build_lib'))
+
+	def run(self):
+		import doctest, sys, unittest
+
+		sys.path.insert(0, self.build_lib)
+
+		tests = unittest.TestSuite()
+		tests.addTests(doctest.DocTestSuite('gpyutils.pycompat'))
+
+		r = unittest.TextTestRunner()
+		res = r.run(tests)
+		sys.exit(0 if res.wasSuccessful() else 1)
+
 
 setup(
 		name = 'gpyutils',
@@ -30,5 +56,9 @@ setup(
 			'Operating System :: POSIX',
 			'Programming Language :: Python',
 			'Topic :: System :: Installation/Setup'
-		]
+		],
+
+		cmdclass = {
+			'test': TestCommand
+		}
 )
