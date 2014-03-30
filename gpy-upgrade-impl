@@ -7,7 +7,8 @@ from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
 from gpyutils.eclasses import guess_package_type, PkgType
-from gpyutils.implementations import get_python_impls, get_impl_by_name
+from gpyutils.implementations import (get_python_impls, get_impl_by_name,
+		read_implementations)
 from gpyutils.packages import get_package_class, group_packages, PackageClass
 from gpyutils.pycompat import EbuildMangler
 
@@ -81,6 +82,8 @@ def main(prog_name, *argv):
 
 	if len(argv) < 2:
 		opt.error('Two implementations need to be provided')
+
+	read_implementations(pm)
 
 	old = get_impl_by_name(argv[0])
 	new = get_impl_by_name(argv[1])

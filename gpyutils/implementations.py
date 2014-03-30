@@ -6,7 +6,7 @@ from .ansi import ANSI
 from .eclasses import guess_package_type, PkgType
 from .util import EnumObj
 
-import fnmatch
+import codecs, csv, fnmatch, os.path
 
 class Status(object):
 	class dead(EnumObj(1)):
@@ -24,33 +24,50 @@ class Status(object):
 	class experimental(EnumObj(5)):
 		color = ANSI.purple
 
+	mapping = {
+		'dead': dead,
+		'old': old,
+		'supported': supported,
+		'current': current,
+		'experimental': experimental,
+	}
+
+
 class PythonImpl(object):
 	def __init__(self, r1_name, r0_name, status, short_name = None):
 		self.r1_name = r1_name
 		self.r0_name = r0_name
-		self.status = status
 		self.short_name = short_name or r0_name
+		if status in Status.mapping:
+			self.status = Status.mapping[status]
+		else:
+			raise KeyError("Invalid implementation status: %s" % status)
 
-implementations = (
-	PythonImpl('python2_4', '2.4', Status.dead),
-	PythonImpl('python2_5', '2.5', Status.dead),
-	PythonImpl('python2_6', '2.6', Status.supported),
-	PythonImpl('python2_7', '2.7', Status.current),
-	PythonImpl('python3_0', '3.0', Status.dead),
-	PythonImpl('python3_1', '3.1', Status.dead),
-	PythonImpl('python3_2', '3.2', Status.current),
-	PythonImpl('python3_3', '3.3', Status.supported),
-	PythonImpl('python3_4', '3.4', Status.experimental),
 
-	PythonImpl('pypy1_8', '2.7-pypy-1.8', Status.dead, 'p1.8'),
-	PythonImpl('pypy1_9', '2.7-pypy-1.9', Status.dead, 'p1.9'),
-	PythonImpl('pypy2_0', '2.7-pypy-2.0', Status.supported, 'p2.0'),
-	PythonImpl('pypy', '2.7-pypy-2.1', Status.experimental, 'pypy'),
-	PythonImpl('pypy3', '3.2-pypy-2.1', Status.experimental, 'pypy3'),
+implementations = []
 
-	PythonImpl('jython2_5', '2.5-jython', Status.dead, 'j2.5'),
-	PythonImpl('jython2_7', '2.7-jython', Status.experimental, 'j2.7'),
-)
+
+def read_implementations(pkg_db):
+	# check repositories for 'implementations.txt'
+	# respecting PM ordering
+	for r in reversed(list(pkg_db.repositories)):
+		path = os.path.join(r.path, 'app-portage', 'gpyutils',
+				'files', 'implementations.txt')
+		if os.path.exists(path):
+			with codecs.open(path, 'r', 'utf8') as f:
+				listr = csv.reader(f, delimiter='\t',
+						lineterminator='\n', strict=True)
+				for l in listr:
+					# skip comment and empty lines
+					if not l or l[0].startswith('#'):
+						continue
+					if len(l) != 4:
+						raise SystemError('Syntax error in implementations.txt')
+					implementations.append(PythonImpl(*l))
+				break
+	else:
+		raise SystemError('Unable to find implementations.txt in any of ebuild repositories')
+
 
 def get_impl_by_name(name):
 	for i in implementations:

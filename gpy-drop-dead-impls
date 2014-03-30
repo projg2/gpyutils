@@ -8,7 +8,7 @@ from gentoopm import get_package_manager
 from gpyutils.ansi import ANSI
 from gpyutils.eclasses import guess_package_type, PkgType
 from gpyutils.implementations import (get_python_impls,
-		implementations, Status)
+		implementations, read_implementations, Status)
 from gpyutils.packages import group_packages
 from gpyutils.pycompat import EbuildMangler
 
@@ -78,6 +78,8 @@ def main(prog_name, *argv):
 			dest='repo', default='gentoo',
 			help='Work on given repository (default: gentoo)')
 	vals, argv = opt.parse_args(list(argv))
+
+	read_implementations(pm)
 
 	if not argv:
 		process(pm.repositories[vals.repo], fix=vals.fix)

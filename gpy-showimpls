@@ -7,12 +7,13 @@ from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
 from gpyutils.implementations import (implementations,
-		get_python_impls, Status, PythonR0Impls)
+		get_python_impls, read_implementations, Status, PythonR0Impls)
 from gpyutils.packages import group_packages
 
 import sys
 
 pm = get_package_manager()
+read_implementations(pm)
 
 # omit dead impls since they get ignored anyway
 my_impls = [i for i in implementations if i.status != Status.dead]
