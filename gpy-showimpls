@@ -6,6 +6,7 @@
 from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
+from gpyutils.eclasses import guess_package_type, PkgType, PkgSubType
 from gpyutils.implementations import (implementations,
 		get_python_impls, read_implementations, Status, PythonR0Impls)
 from gpyutils.packages import group_packages
@@ -26,21 +27,28 @@ def process(pkgs):
 		for p in pg:
 			output = [' ' * len(x) for x in keys]
 
-			impls = get_python_impls(p)
-			if impls is None:
-				# not a python package
+			ptype = guess_package_type(p, check_deps=False)
+			if ptype == PkgType.non_python:
 				continue
+
+			impls = get_python_impls(p)
 			for i in impls:
 				if i in my_impls:
 					output[keys.index(i.short_name)] = ('%s%s%s'
 						% (i.status.color, i.short_name, ANSI.reset))
 
-			if isinstance(impls, PythonR0Impls):
-				eclass_tag = ANSI.gray + '*' + ANSI.reset
+			if ptype == PkgType.python_r0:
+				eclass_tag = '*'
+			elif ptype.subtype == PkgSubType.python_single:
+				eclass_tag = 's'
+			elif ptype.subtype == PkgSubType.python_any:
+				eclass_tag = 'a'
 			else:
 				eclass_tag = ' '
 
-			print('%16s: %s %s' % (p.version, eclass_tag, ' '.join(output)))
+			print('%16s: %s%s%s %s' % (p.version,
+				ANSI.gray, eclass_tag, ANSI.reset,
+				' '.join(output)))
 
 def main(prog_name, *argv):
 	if not argv:
