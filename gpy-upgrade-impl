@@ -8,7 +8,7 @@ from gentoopm import get_package_manager
 from gpyutils.ansi import ANSI
 from gpyutils.eclasses import guess_package_type, PkgType
 from gpyutils.implementations import get_python_impls, get_impl_by_name
-from gpyutils.packages import group_packages
+from gpyutils.packages import get_package_class, group_packages, PackageClass
 from gpyutils.pycompat import EbuildMangler
 
 import optparse, sys
@@ -46,12 +46,23 @@ def process(pkgs, old, new, fix=False):
 
 				if fix and isinstance(guess_package_type(p),
 						PkgType.python_r1):
-					try:
-						with EbuildMangler(p.path) as em:
-							em.add(new.r1_name)
-					except Exception as e:
-						sys.stderr.write('%s%s%s\n'
-								% (ANSI.brown, str(e), ANSI.reset))
+					upd_list = []
+
+					for p in reversed(pg):
+						upd_list.append(p.path)
+
+						# update all non-keyworded (possibly live) ebuilds
+						# and the newest keyworded ebuild, then stop
+						if get_package_class(p) != PackageClass.non_keyworded:
+							break
+
+					for path in upd_list:
+						try:
+							with EbuildMangler(path) as em:
+								em.add(new.r1_name)
+						except Exception as e:
+							sys.stderr.write('%s%s%s\n'
+									% (ANSI.brown, str(e), ANSI.reset))
 
 	sys.stderr.write('%s%sDone.%s\n'
 			% (ANSI.clear_line, ANSI.white, ANSI.reset))
@@ -62,7 +73,7 @@ def main(prog_name, *argv):
 		usage = '%prog <old-impl> <new-impl> [<packages>...]')
 	opt.add_option('-f', '--fix', action='store_true',
 			dest='fix', default=False,
-			help='Automatically add <new-impl> to PYTHON_COMPAT')
+			help='Automatically add <new-impl> to PYTHON_COMPAT in the newest testing (and live) ebuild')
 	opt.add_option('-r', '--repo',
 			dest='repo', default='gentoo',
 			help='Work on given repository (default: gentoo)')
