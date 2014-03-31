@@ -129,6 +129,9 @@ class PythonCompat(object):
 
 			suff1 = v.full_name[len(cpfx):]
 			suff2 = impl_name[len(cpfx):]
+			# avoid 'empty' sections (e.g. pypy{,2_0})
+			if not suff1 or not suff2:
+				continue
 			# don't split in middle of name (e.g. py{py,thon})
 			if not suff1[0].isdigit() or not suff2[0].isdigit():
 				continue
