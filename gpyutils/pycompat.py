@@ -44,15 +44,17 @@ def get_previous_val_index(l, v):
 	1
 	>>> get_previous_val_index([Value('c'), Value('b')], Value('a'))
 	-1
+	>>> get_previous_val_index([Value('b'), Whitespace(' '), Value('c')], Value('a'))
+	-1
 	"""
 	def sort_key(x):
 		if isinstance(x, Whitespace):
 			# sort whitespace out to the end
-			return 'Z'
+			return (1,)
 		elif isinstance(x, Value):
-			return x.local_name
+			return (0, x.local_name)
 		else:
-			return x.local_prefix
+			return (0, x.local_prefix)
 
 	sorted_values = sorted(l + [v], key=sort_key)
 	idx = sorted_values.index(v)
@@ -308,7 +310,7 @@ def add_impl(s, new):
 	>>> add_impl('python{2_6,2_7,3_2,3_3} pypy2_0', 'jython2_7')
 	'jython2_7 python{2_6,2_7,3_2,3_3} pypy2_0'
 	>>> add_impl('python{2_6,2_7,3_2,3_3} pypy2_0', 'pypy')
-	'python{2_6,2_7,3_2,3_3} pypy{,2_0}'
+	'pypy python{2_6,2_7,3_2,3_3} pypy2_0'
 	"""
 	pc = parse(s)
 	pc.add(new)
