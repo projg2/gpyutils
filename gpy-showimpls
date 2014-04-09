@@ -48,7 +48,7 @@ def process(pkgs):
 
 			pclass = get_package_class(p)
 			if pclass == PackageClass.stable:
-				keyw_tag = ANSI.green + 's' + ANSI.reset
+				keyw_tag = ANSI.green + 'S' + ANSI.reset
 			elif pclass == PackageClass.testing:
 				keyw_tag = ANSI.brown + '~' + ANSI.reset
 			else:
