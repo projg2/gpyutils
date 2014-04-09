@@ -158,8 +158,12 @@ class PythonCompat(object):
 		v = Value(impl_name, impl_name)
 		i = get_previous_val_index(self.nodes, v)
 
+		prepend_ws = (i != -1)
+		if i == -1 and isinstance(self.nodes[0], Whitespace):
+			i = 0
+
 		self.nodes.insert(i+1, v)
-		self.nodes.insert(i+1 if i != -1 else 1, Whitespace(' '))
+		self.nodes.insert(i+1 if prepend_ws else i+2, Whitespace(' '))
 
 	def remove(self, impl_name):
 		for i in self:
@@ -311,6 +315,10 @@ def add_impl(s, new):
 	'jython2_7 python{2_6,2_7,3_2,3_3} pypy2_0'
 	>>> add_impl('python{2_6,2_7,3_2,3_3} pypy2_0', 'pypy')
 	'pypy python{2_6,2_7,3_2,3_3} pypy2_0'
+	>>> add_impl(' pypy ', 'python2_6')
+	' pypy python2_6 '
+	>>> add_impl(' python{2_6,2_7} ', 'pypy')
+	' pypy python{2_6,2_7} '
 	"""
 	pc = parse(s)
 	pc.add(new)
