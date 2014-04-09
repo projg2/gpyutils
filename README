@@ -84,9 +84,23 @@ followed by a table listing supported implementations. Supported
 implementations are color-coded for their importance. Unsupported are
 simply not listed.
 
-Asterisk following the package version denotes that the particular
-version is using the -r0 eclass, therefore untested implementations were
-enabled by default and some of them may not actually work.
+gpy-showimpls prints three extra columns that annotate the ebuild with
+potentially useful extra information.
+
+The first column explains the package keywords state. No symbol means
+no keywords (live ebuild likely), '~' means no stable keywords and 'S'
+means that the package has at least one stable keyword.
+
+The second column explains the support for multiple implementations.
+No symbol means that the package supports multiple implementations
+(likewise python-r1), 's' denotes that only one implementation can be
+chosen (likewise python-single-r1) and 'a' denotes that any of supported
+implementations will be used (likewise python-any-r1).
+
+The third column denotes the eclass suite used. No symbol means that
+python-r1 eclass is used, asterisk means that the 'python.eclass' is
+used. In this case, all untested implementations are listed as enabled
+and some of them may not actually work.
 
 The scan can be done per-package only.
 
