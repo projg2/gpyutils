@@ -37,6 +37,10 @@ def process(pkgs, old, new, fix=False):
 			continue
 
 		if old in impls:
+			if not new.r0_name and isinstance(guess_package_type(p),
+					PkgType.python_r0):
+				continue
+
 			total_pkg += 1
 			if new not in impls:
 				total_upd += 1
