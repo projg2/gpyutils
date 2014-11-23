@@ -16,7 +16,7 @@ import optparse, sys
 
 pm = get_package_manager()
 
-def process(pkgs, old, new, fix=False):
+def process(pkgs, old, new, fix=False, stabilizations=False):
 	total_upd = 0
 	total_pkg = 0
 
@@ -36,7 +36,31 @@ def process(pkgs, old, new, fix=False):
 			# not a Python package
 			continue
 
-		if old in impls:
+		if stabilizations and new in impls:
+			# check if new is supported in stable
+			# and if any stable version supported old
+			has_in_stable = False
+			has_any_stable = False
+
+			for p in reversed(pg):
+				if get_package_class(p) == PackageClass.stable:
+					impls = (get_python_impls(p) or ())
+					if new in impls:
+						has_in_stable = True
+						break
+					elif old in impls:
+						has_any_stable = True
+
+			if has_any_stable:
+				total_pkg += 1
+				if not has_in_stable:
+					total_upd += 1
+					# in case stdout & stderr goes to the same console,
+					# clean up the line before printing
+					sys.stderr.write('%s\r' % ANSI.clear_line)
+					print(p.slotted_atom)
+
+		elif not stabilizations and old in impls:
 			if not new.r0_name and isinstance(guess_package_type(p),
 					PkgType.python_r0):
 				continue
@@ -82,8 +106,13 @@ def main(prog_name, *argv):
 	opt.add_option('-r', '--repo',
 			dest='repo', default='gentoo',
 			help='Work on given repository (default: gentoo)')
+	opt.add_option('-s', '--stabilizations', action='store_true',
+			dest='stabilizations', default=False,
+			help='Find stabilization candidates needed for <new-impl> support')
 	vals, argv = opt.parse_args(list(argv))
 
+	if vals.fix and vals.stabilizations:
+		opt.error('--fix and --stabilizations options are mutually exclusive')
 	if len(argv) < 2:
 		opt.error('Two implementations need to be provided')
 
@@ -97,11 +126,12 @@ def main(prog_name, *argv):
 				% (ANSI.brown, ANSI.reset))
 
 	if len(argv) == 2:
-		process(pm.repositories[vals.repo], old, new, fix=vals.fix)
+		process(pm.repositories[vals.repo], old, new, fix=vals.fix,
+				stabilizations=vals.stabilizations)
 	else:
 		for pkg in argv[2:]:
 			process(pm.repositories[vals.repo].filter(pkg), old, new,
-				fix=vals.fix)
+				fix=vals.fix, stabilizations=vals.stabilizations)
 
 	return 0
 
