@@ -61,7 +61,7 @@ def process(pkgs, old, new, fix=False, stabilizations=False):
 					print(p.slotted_atom)
 
 		elif not stabilizations and old in impls:
-			if not new.r0_name and isinstance(guess_package_type(p),
+			if not new.supports_r0() and isinstance(guess_package_type(p),
 					PkgType.python_r0):
 				continue
 
@@ -121,7 +121,7 @@ def main(prog_name, *argv):
 	old = get_impl_by_name(argv[0])
 	new = get_impl_by_name(argv[1])
 
-	if old.r0_name and not new.r0_name:
+	if old.supports_r0() and not new.supports_r0():
 		sys.stderr.write('%s[warning: new-impl is not supported by python.eclass\n python.eclass packages will be omitted]%s\n'
 				% (ANSI.brown, ANSI.reset))
 

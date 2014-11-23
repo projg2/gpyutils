@@ -47,6 +47,9 @@ class PythonImpl(object):
 		else:
 			raise KeyError("Invalid implementation status: %s" % status)
 
+	def supports_r0(self):
+		return bool(self.r0_name)
+
 
 implementations = []
 
