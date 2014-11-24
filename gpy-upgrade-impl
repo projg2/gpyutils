@@ -23,7 +23,7 @@ def process(pkgs, old, new, fix=False, stabilizations=False):
 	sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
 			% (ANSI.clear_line, ANSI.brown, ANSI.reset))
 
-	for pg in group_packages(pkgs):
+	for pg in group_packages(pkgs, key = 'slotted_atom'):
 		sys.stderr.write('%s%s%-40s%s (%s%4d%s of %s%4d%s need checking)\r'
 				% (ANSI.clear_line, ANSI.green, pg[0].key, ANSI.reset,
 					ANSI.white, total_upd, ANSI.reset,
