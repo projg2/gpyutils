@@ -28,7 +28,7 @@ def process(pkgs, output, assume_r1=False, list_all=False):
 			% (ANSI.clear_line, ANSI.brown, ANSI.reset))
 
 	for pg in group_packages_if(pkgs, list_all):
-		p = pg[0]
+		p = pg[-1]
 		sys.stderr.write('%s%s%-56s%s (%s%4d%s found)\r'
 				% (ANSI.clear_line, ANSI.green, p, ANSI.reset,
 					ANSI.white, len(output), ANSI.reset))
