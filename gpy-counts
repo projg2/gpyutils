@@ -9,6 +9,7 @@
 from gentoopm import get_package_manager
 
 from collections import defaultdict
+import datetime
 import sys
 
 from gpyutils.ansi import ANSI
@@ -86,6 +87,7 @@ def process(pkgs):
 		perc = 100.0*new/sum
 		perc2 = 100.0*(new+unstable)/sum
 
+		print("address:after { content: '; generated on %s'; }" % datetime.datetime.now())
 		print('')
 		print('/* %s */' % eclass)
 		for key, val in (('old', old), ('new', new + unstable),
