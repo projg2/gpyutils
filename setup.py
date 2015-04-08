@@ -33,7 +33,7 @@ class TestCommand(Command):
 
 setup(
 		name = 'gpyutils',
-		version = '0.1.3',
+		version = '0.1.4',
 		author = 'Michał Górny',
 		author_email = 'mgorny@gentoo.org',
 		url = 'https://bitbucket.org/mgorny/gpyutils',
