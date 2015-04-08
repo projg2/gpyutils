@@ -15,6 +15,7 @@ from gpyutils.pycompat import EbuildMangler
 import optparse, sys
 
 pm = get_package_manager()
+read_implementations(pm)
 dead_impls = [i for i in implementations if i.status == Status.dead]
 
 def process(pkgs, fix=False):
@@ -78,8 +79,6 @@ def main(prog_name, *argv):
 			dest='repo', default='gentoo',
 			help='Work on given repository (default: gentoo)')
 	vals, argv = opt.parse_args(list(argv))
-
-	read_implementations(pm)
 
 	if not argv:
 		process(pm.repositories[vals.repo], fix=vals.fix)
