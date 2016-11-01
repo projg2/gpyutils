@@ -99,6 +99,40 @@ class Group(object):
 		return ''.join((self.local_prefix, vals))
 
 
+range_re = re.compile(r'^(\d+)\.\.(\d+)$')
+
+
+class Range(Group):
+	def __init__(self, f_prefix, l_prefix, values):
+		assert(len(values) == 1)
+		m = range_re.match(values[0].local_name)
+		if m is None:
+			raise ValueError("Invalid range: %s" % values[0].local_name)
+		Group.__init__(self, f_prefix, l_prefix,
+				[Value(''.join((f_prefix, str(x))), str(x))
+					for x in range(int(m.group(1)), int(m.group(2))+1)])
+
+	def __repr__(self):
+		return 'Range(full_prefix=%s, local_prefix=%s, values=%s)' % (
+			self.full_prefix,
+			self.local_prefix,
+			self.values,
+		)
+
+	def __str__(self):
+		# try a continuous range if we have >1 value
+		vals = [x for x in self.values if not x.removed]
+		if len(vals) > 1:
+			minrange = int(vals[0].local_name)
+			maxrange = int(vals[-1].local_name)
+			# lazy way of checking
+			ovalues = [x.local_name for x in vals]
+			rvalues = [str(x) for x in range(minrange, maxrange+1)]
+			if ovalues == rvalues:
+				return '%s{%d..%d}' % (self.local_prefix, minrange, maxrange)
+		return Group.__str__(self)
+
+
 class PythonCompat(object):
 	def __init__(self):
 		self.nodes = []
@@ -235,7 +269,12 @@ def parse_item(s):
 
 			commit_value()
 			if values[-1]:
-				values[-2].append(Group(
+				# range thingie
+				if len(values[-1]) == 1 and '..' in values[-1][0].local_name:
+					cls = Range
+				else:
+					cls = Group
+				values[-2].append(cls(
 					''.join(curr[:-1]),
 					curr[-2],
 					values[-1],
@@ -319,6 +358,14 @@ def add_impl(s, new):
 	' pypy python2_6 '
 	>>> add_impl(' python{2_6,2_7} ', 'pypy')
 	' pypy python{2_6,2_7} '
+	>>> add_impl('python2_7 python3_{3..4}', 'python3_5')
+	'python2_7 python3_{3..5}'
+	>>> add_impl('python2_7 python3_{3..4}', 'python3_2')
+	'python2_7 python3_{2..4}'
+	>>> add_impl('python{2_{6..7},3_{3..4}}', 'python3_2')
+	'python{2_{6..7},3_{2..4}}'
+	>>> add_impl('python2_7 python3_{4..5}', 'python3_2')
+	'python2_7 python3_{2,4,5}'
 	"""
 	pc = parse(s)
 	pc.add(new)
@@ -347,6 +394,16 @@ def del_impl(s, old):
 	' python{2_{6,7},3_{1,2,3}} pypy{1_{8,9},2_0} '
 	>>> del_impl(' python{2_{5,6,7},3_{1,2,3}} pypy{1_{8,9},2_0} ', 'pypy1_8')
 	' python{2_{5,6,7},3_{1,2,3}} pypy{1_9,2_0} '
+	>>> del_impl('python2_{6..7}', 'python2_6')
+	'python2_7'
+	>>> del_impl('python3_{1..5}', 'python3_1')
+	'python3_{2..5}'
+	>>> del_impl('python3_{1..5}', 'python3_5')
+	'python3_{1..4}'
+	>>> del_impl('python3_{1..5}', 'python3_3')
+	'python3_{1,2,4,5}'
+	>>> del_impl('python{2_{6..7},3_{3..5}}', 'python2_6')
+	'python{2_7,3_{3..5}}'
 	"""
 	pc = parse(s)
 	pc.remove(old)
