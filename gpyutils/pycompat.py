@@ -16,7 +16,7 @@ class Whitespace(str):
 class Value(object):
 	def __init__(self, f_name, l_name=None):
 		self.full_name = f_name
-		self.local_name = l_name or f_name
+		self.local_name = l_name if l_name is not None else f_name
 		self.removed = False
 
 	def __repr__(self):
@@ -263,6 +263,7 @@ def parse_item(s):
 			depth += 1
 			curr.append('')
 			values.append([])
+			had_text = [True]
 		elif c == '}':
 			if depth == 0:
 				raise ValueError("Unmatched closing brace '}'")
@@ -288,6 +289,7 @@ def parse_item(s):
 				raise ValueError("Comma ',' outside brace")
 			commit_value()
 			curr[-1] = ''
+			had_text = [True]
 		else:
 			had_text = [True]
 			curr[-1] += c
@@ -366,6 +368,12 @@ def add_impl(s, new):
 	'python{2_{6..7},3_{2..4}}'
 	>>> add_impl('python2_7 python3_{4..5}', 'python3_2')
 	'python2_7 python3_{2,4,5}'
+	>>> add_impl('pypy{,3}', 'python2_7')
+	'pypy{,3} python2_7'
+	>>> add_impl('pypy{,3}', 'pypy4')
+	'pypy{,3,4}'
+	>>> add_impl('pypy{3,4}', 'pypy')
+	'pypy{,3,4}'
 	"""
 	pc = parse(s)
 	pc.add(new)
@@ -404,6 +412,18 @@ def del_impl(s, old):
 	'python3_{1,2,4,5}'
 	>>> del_impl('python{2_{6..7},3_{3..5}}', 'python2_6')
 	'python{2_7,3_{3..5}}'
+	>>> del_impl('pypy{,3} python2_7', 'python2_7')
+	'pypy{,3}'
+	>>> del_impl('pypy{,3}', 'pypy3')
+	'pypy'
+	>>> del_impl('pypy{,3}', 'pypy')
+	'pypy3'
+	>>> del_impl('pypy{3,} python2_7', 'python2_7')
+	'pypy{3,}'
+	>>> del_impl('pypy{3,}', 'pypy3')
+	'pypy'
+	>>> del_impl('pypy{3,}', 'pypy')
+	'pypy3'
 	"""
 	pc = parse(s)
 	pc.remove(old)
