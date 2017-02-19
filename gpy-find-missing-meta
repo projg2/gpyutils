@@ -1,0 +1,187 @@
+#!/usr/bin/env python
+#	vim:fileencoding=utf-8
+# (c) 2017 Michał Górny <mgorny@gentoo.org>
+# Released under the terms of the 2-clause BSD license.
+
+from gentoopm import get_package_manager
+from gentoopm.basepm.atom import PMAtom
+import gentoopm.basepm.depend as dep
+
+from gpyutils.ansi import ANSI
+from gpyutils.eclasses import guess_package_type, PkgType, PkgSubType
+from gpyutils.implementations import (get_python_impls,
+		read_implementations, Status)
+from gpyutils.packages import group_packages
+
+import re
+import sys
+
+pm = get_package_manager()
+read_implementations(pm)
+
+
+def get_target_for_package(pkg):
+	if pkg.key == 'dev-lang/python' and pkg.slot:
+		return 'python%s' % pkg.slot.replace('.', '_')
+	elif pkg.key == 'dev-java/jython' and pkg.slot:
+		return 'jython%s' % pkg.slot.replace('.', '_')
+	elif pkg.key == 'virtual/pypy':
+		return 'pypy'
+	elif pkg.key == 'virtual/pypy3':
+		return 'pypy3'
+	return None
+
+
+def scan_dep_recursively(deptree, basedep):
+	for x in deptree:
+		if not isinstance(x, basedep):
+			for y in scan_dep_recursively(x, basedep):
+				yield y
+	yield deptree
+
+
+def check_required_use(requse, targets, is_single_r1):
+	if is_single_r1 and len(targets) > 1:
+		# ^^ ( python_single_target_... )
+		prefix = 'python_single_target_'
+		expcls = dep.PMExactlyOneOfDep
+	else:
+		# || ( python_targets_... )
+		prefix = 'python_targets_'
+		expcls = dep.PMAnyOfDep
+	plen = len(prefix)
+
+	for bl in scan_dep_recursively(requse, dep.PMRequiredUseAtom):
+		# don't expect class matching with 1 target since PM can
+		# collapse the outer ||/^^
+		if len(targets) > 1 and not isinstance(bl, expcls):
+			continue
+		matched = set()
+		for x in bl:
+			if isinstance(x, dep.PMRequiredUseAtom) and x.name.startswith(prefix):
+				matched.add(x[plen:])
+		if matched == targets:
+			return True
+
+	return False
+
+
+def check_depends(deptree, targets):
+	# note: this is kinda limited since gpyutils does not expose USE
+	# conditionals in USE-conditional atoms
+
+	matched = []
+	for bl in scan_dep_recursively(deptree, PMAtom):
+		matched = set()
+		for x in bl:
+			# look for USE conditionals containing python deps
+			if isinstance(x, dep.PMConditionalDep):
+				for y in x:
+					if isinstance(y, PMAtom):
+						t = get_target_for_package(y)
+						if t is not None:
+							matched.add(t)
+							break
+
+		if matched == targets:
+			return True
+
+	return False
+
+
+def check_depends_any_r1(deptree, targets):
+	matched = []
+	for bl in scan_dep_recursively(deptree, PMAtom):
+		# look for the outer || ( ... )
+		# note that it may be collapsed if there's just one target
+		if len(targets) > 1 and not isinstance(bl, dep.PMAnyOfDep):
+			continue
+
+		matched = set()
+		for x in bl:
+			t = None
+			# python_gen_any_dep creates one nesting level
+			if isinstance(x, dep.PMAllOfDep):
+				for y in x:
+					if isinstance(y, PMAtom):
+						t = get_target_for_package(y)
+						if t is not None:
+							break
+			elif isinstance(x, PMAtom):
+				t = get_target_for_package(x)
+
+			if t is not None:
+				matched.add(t)
+
+		if matched == targets:
+			return True
+
+	return False
+
+
+def process(pkgs, repo):
+	sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
+			% (ANSI.clear_line, ANSI.brown, ANSI.reset))
+
+	total_need = 0
+	total_pkg = 0
+
+	for pg in group_packages(pkgs):
+		sys.stderr.write('%s%s%-40s%s (%s%4d%s of %s%4d%s potentially broken)\r'
+				% (ANSI.clear_line, ANSI.green, pg[0].key, ANSI.reset,
+					ANSI.white, total_need, ANSI.reset,
+					ANSI.white, total_pkg, ANSI.reset))
+
+		any_r1 = False
+		for p in pg:
+			t = guess_package_type(p)
+			if not isinstance(t, PkgType.python_r1):
+				continue
+			any_r1 = True
+
+			found_missing = []
+
+			impls = get_python_impls(p)
+			targets = frozenset(x.r1_name for x in impls
+					if x.status not in (Status.dead, Status.future))
+			if not targets:
+				found_missing.append('PYTHON_COMPAT in ebuild')
+			elif t.subtype != PkgSubType.python_any:
+				if not check_required_use(p.required_use, targets,
+						t.subtype == PkgSubType.python_single):
+					found_missing.append('PYTHON_REQUIRED_USE in REQUIRED_USE')
+				if not check_depends(p.run_dependencies, targets):
+					found_missing.append('PYTHON_DEPS in RDEPEND')
+			else:
+				if not check_depends_any_r1(p.build_dependencies, targets):
+					found_missing.append('PYTHON_DEPS in DEPEND')
+
+			if found_missing:
+				# in case stdout & stderr goes to the same console,
+				# clean up the line before printing
+				sys.stderr.write('%s\r' % ANSI.clear_line)
+				for x in found_missing:
+					print('%s: %s' % (p, x))
+
+				total_need += 1
+				break
+
+		if any_r1:
+			total_pkg += 1
+
+	sys.stderr.write('%s%sDone.%s\n'
+			% (ANSI.clear_line, ANSI.white, ANSI.reset))
+
+def main(prog_name, *argv):
+	repo = pm.repositories['gentoo']
+
+	if not argv:
+		process(repo, repo=repo)
+	else:
+		for pkg in argv:
+			process(repo.filter(pkg), repo=repo)
+
+	return 0
+
+if __name__ == '__main__':
+	sys.exit(main(*sys.argv))
