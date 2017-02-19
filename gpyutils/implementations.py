@@ -1,9 +1,9 @@
 #	vim:fileencoding=utf-8
-# (c) 2013 Michał Górny <mgorny@gentoo.org>
+# (c) 2013-2017 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from .ansi import ANSI
-from .eclasses import guess_package_type, PkgType
+from .eclasses import guess_package_type, PkgType, PkgSubType
 from .util import EnumObj
 
 import codecs, csv, fnmatch, os.path
@@ -89,8 +89,14 @@ class PythonImpls(object):
 				yield i
 
 class PythonR1Impls(PythonImpls):
-	def __init__(self, pkg):
-		self._impls = pkg.environ['PYTHON_COMPAT[*]'].split()
+	def __init__(self, pkg, subtype):
+		if subtype != PkgSubType.python_any:
+			# IUSE should be much faster than env
+			# len("python_targets_") == 15
+			self._impls = [x[15:] for x in pkg.use
+					if x.startswith('python_targets_')]
+		else:
+			self._impls = pkg.environ['PYTHON_COMPAT[*]'].split()
 
 	def __contains__(self, i):
 		return i.r1_name in self._impls
@@ -110,7 +116,7 @@ def get_python_impls(pkg):
 	t = guess_package_type(pkg, check_deps=False)
 
 	if isinstance(t, PkgType.python_r1):
-		return PythonR1Impls(pkg)
+		return PythonR1Impls(pkg, t.subtype)
 	elif isinstance(t, PkgType.python_r0):
 		return PythonR0Impls(pkg)
 	return None
