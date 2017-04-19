@@ -145,16 +145,16 @@ def process(pkgs, repo):
 			targets = frozenset(x.r1_name for x in impls
 					if x.status not in (Status.dead, Status.future))
 			if not targets:
-				found_missing.append('PYTHON_COMPAT in ebuild')
+				found_missing.append('PYTHON_COMPAT not declared in ebuild')
 			elif t.subtype != PkgSubType.python_any:
 				if not check_required_use(p.required_use, targets,
 						t.subtype == PkgSubType.python_single):
-					found_missing.append('PYTHON_REQUIRED_USE in REQUIRED_USE')
+					found_missing.append('PYTHON_REQUIRED_USE missing in REQUIRED_USE')
 				if not check_depends(p.run_dependencies, targets):
-					found_missing.append('PYTHON_DEPS in RDEPEND')
+					found_missing.append('PYTHON_DEPS missing in RDEPEND')
 			else:
 				if not check_depends_any_r1(p.build_dependencies, targets):
-					found_missing.append('PYTHON_DEPS in DEPEND')
+					found_missing.append('PYTHON_DEPS missing in DEPEND')
 
 			if found_missing:
 				# in case stdout & stderr goes to the same console,
