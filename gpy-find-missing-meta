@@ -155,6 +155,8 @@ def process(pkgs, repo):
 			else:
 				if not check_depends_any_r1(p.build_dependencies, targets):
 					found_missing.append('PYTHON_DEPS missing in DEPEND')
+				if check_depends_any_r1(p.run_dependencies, targets):
+					found_missing.append('PYTHON_DEPS used in RDEPEND (wrong eclass?)')
 
 			if found_missing:
 				# in case stdout & stderr goes to the same console,
