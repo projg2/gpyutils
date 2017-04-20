@@ -40,8 +40,15 @@ def scan_dep_recursively(deptree, basedep):
 	yield deptree
 
 
-def check_required_use(requse, targets, is_single_r1):
-	if is_single_r1 and len(targets) > 1:
+def check_required_use(requse, targets, subtype):
+	assert subtype != PkgSubType.python_any
+
+	# distutils can be either single or multi
+	if subtype == PkgSubType.distutils:
+		return (check_required_use(requse, targets, PkgSubType.python)
+			or check_required_use(requse, targets, PkgSubType.python_single))
+
+	if subtype == PkgSubType.python_single and len(targets) > 1:
 		# ^^ ( python_single_target_... )
 		prefix = 'python_single_target_'
 		expcls = dep.PMExactlyOneOfDep
@@ -147,8 +154,7 @@ def process(pkgs, repo):
 			if not targets:
 				found_missing.append('PYTHON_COMPAT not declared in ebuild')
 			elif t.subtype != PkgSubType.python_any:
-				if not check_required_use(p.required_use, targets,
-						t.subtype == PkgSubType.python_single):
+				if not check_required_use(p.required_use, targets, t.subtype):
 					found_missing.append('PYTHON_REQUIRED_USE missing in REQUIRED_USE')
 				if not check_depends(p.run_dependencies, targets):
 					found_missing.append('PYTHON_DEPS missing in RDEPEND')
