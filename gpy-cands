@@ -40,7 +40,7 @@ def process(pkgs):
 			# clean up the line before printing
 			sys.stderr.write('%s\r' % ANSI.clear_line)
 
-			print('%s [%s]' % (p, t.subtype.eclass_r1))
+			print('%s [%s -> %s]' % (p, t.subtype.eclass_r0, t.subtype.eclass_r1))
 
 	sys.stderr.write('%s%sDone.%s\n'
 			% (ANSI.clear_line, ANSI.white, ANSI.reset))

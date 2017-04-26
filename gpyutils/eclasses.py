@@ -25,22 +25,27 @@ class PkgSubType(object):
 	class distutils(EnumObj(5)):
 		""" distutils-r1 / distutils """
 		eclass_r1 = 'distutils-r1'
+		eclass_r0 = 'distutils'
 
 	class python(EnumObj(4)):
 		""" python-r1 / multi-ABI python """
 		eclass_r1 = 'python-r1'
+		eclass_r0 = 'python'
 
 	class python_single(EnumObj(3)):
 		""" python-single-r1 / single-ABI python """
 		eclass_r1 = 'python-single-r1'
+		eclass_r0 = 'python'
 
 	class python_rdep(EnumObj(2)):
 		""" - / random python dep in RDEPEND/PDEPEND """
 		eclass_r1 = 'python-single-r1'
+		eclass_r0 = '(none)'
 
 	class python_any(EnumObj(1)):
 		""" python-any-r1 / random python dep in DEPEND """
 		eclass_r1 = 'python-any-r1'
+		eclass_r0 = '(none)'
 
 	all_subtypes = (distutils, python, python_single, python_rdep, python_any)
 

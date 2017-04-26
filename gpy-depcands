@@ -63,8 +63,8 @@ def process(pkgs, output, assume_r1=False, list_all=False):
 					if was_first[0]:
 						print('%s' % p)
 						was_first[0] = False
-					print('%s%s [%s]' % ('    ' * (depth + 1), dep,
-						dep_t.subtype.eclass_r1))
+					print('%s%s [%s->%s]' % ('    ' * (depth + 1), dep,
+						dep_t.subtype.eclass_r0, dep_t.subtype.eclass_r1))
 
 					# depscan takes a while, so re-output status
 					sys.stderr.write('%s%s%-56s%s (%s%4d%s found)\r'
