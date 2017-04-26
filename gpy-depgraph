@@ -39,6 +39,7 @@ def process(repo, pkgs):
 	sys.stderr.write('%s%sGenerating the graph...%s\n'
 			% (ANSI.clear_line, ANSI.cyan, ANSI.reset))
 	print('digraph {')
+	print('\trankdir=LR;')
 
 	for i, p in enumerate(pkgs):
 		# TODO: option to check deps for all versions?
