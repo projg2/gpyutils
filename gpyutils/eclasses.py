@@ -1,5 +1,5 @@
 #	vim:fileencoding=utf-8
-# (c) 2013 Michał Górny <mgorny@gentoo.org>
+# (c) 2017 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from .util import EnumObj
@@ -22,23 +22,27 @@ def has_python_in_deptree(dep):
 class PkgSubType(object):
 	""" Package sub-type. """
 
-	class distutils(EnumObj(4)):
+	class distutils(EnumObj(5)):
 		""" distutils-r1 / distutils """
 		eclass_r1 = 'distutils-r1'
 
-	class python(EnumObj(3)):
+	class python(EnumObj(4)):
 		""" python-r1 / multi-ABI python """
 		eclass_r1 = 'python-r1'
 
-	class python_single(EnumObj(2)):
+	class python_single(EnumObj(3)):
 		""" python-single-r1 / single-ABI python """
 		eclass_r1 = 'python-single-r1'
 
+	class python_rdep(EnumObj(2)):
+		""" - / random python dep in RDEPEND/PDEPEND """
+		eclass_r1 = 'python-single-r1'
+
 	class python_any(EnumObj(1)):
-		""" python-any-r1 / any random python dep """
+		""" python-any-r1 / random python dep in DEPEND """
 		eclass_r1 = 'python-any-r1'
 
-	all_subtypes = (distutils, python, python_single, python_any)
+	all_subtypes = (distutils, python, python_single, python_rdep, python_any)
 
 class PkgType(object):
 	""" Guess package type from inherited eclasses. """
@@ -85,9 +89,10 @@ def guess_package_type(pkg, check_deps=True):
 			# subtype check involves running bash
 			# so better keep it lazy
 			return PkgType.python_r0(pkg, lazy=True)
-	elif check_deps and (has_python_in_deptree(pkg.run_dependencies)
-			or has_python_in_deptree(pkg.post_dependencies)
-			or has_python_in_deptree(pkg.build_dependencies)):
-		return PkgType.python_r0(PkgSubType.python_any)
-	else:
-		return PkgType.non_python()
+	elif check_deps:
+		if (has_python_in_deptree(pkg.run_dependencies)
+				or has_python_in_deptree(pkg.post_dependencies)):
+			return PkgType.python_r0(PkgSubType.python_rdep)
+		if has_python_in_deptree(pkg.build_dependencies):
+			return PkgType.python_r0(PkgSubType.python_any)
+	return PkgType.non_python()
