@@ -1,0 +1,139 @@
+#!/usr/bin/env python
+#	vim:fileencoding=utf-8
+# (c) 2017 Michał Górny <mgorny@gentoo.org>
+# Released under the terms of the 2-clause BSD license.
+
+from gentoopm import get_package_manager
+from gentoopm.basepm.atom import PMAtom
+from gentoopm.exceptions import EmptyPackageSetError
+
+from gpyutils.ansi import ANSI
+
+import collections
+import optparse
+import sys
+
+
+match_cache = {}
+revmatch_cache = collections.defaultdict(set)
+pm = get_package_manager()
+
+
+def process(repo, pkgs):
+	sys.stderr.write('%sPopulating match cache...%s\n'
+			% (ANSI.cyan, ANSI.reset))
+
+	for i, p in enumerate(pkgs):
+		sys.stderr.write('%s%s%-56s%s (%s%4d%s/%s%4d%s done)\r'
+				% (ANSI.clear_line, ANSI.green, p, ANSI.reset,
+					ANSI.white, i, ANSI.reset,
+					ANSI.white, len(pkgs), ANSI.reset))
+
+		matches = frozenset(repo.filter(p))
+		if not matches:
+			raise ValueError('%s matches no packages!' % p)
+		match_cache[p] = matches
+		for m in matches:
+			revmatch_cache[m].add(p)
+
+	sys.stderr.write('%s%sGenerating the graph...%s\n'
+			% (ANSI.clear_line, ANSI.cyan, ANSI.reset))
+	print('digraph {')
+
+	for i, p in enumerate(pkgs):
+		# TODO: option to check deps for all versions?
+		pkg = repo.select(p)
+		sys.stderr.write('%s%s%-56s%s (%s%4d%s/%s%4d%s done)\r'
+				% (ANSI.clear_line, ANSI.green, p, ANSI.reset,
+					ANSI.white, i, ANSI.reset,
+					ANSI.white, len(pkgs), ANSI.reset))
+
+		def check_dep(dep):
+			if isinstance(dep, PMAtom):
+				if dep.blocking:
+					return
+
+				# USE deps cause problems with matching, strip them
+				# Note to self: this is ugly.
+				dep = pm.Atom(str(dep).partition('[')[0])
+
+				if dep not in match_cache:
+					match_cache[dep] = frozenset(repo.filter(dep))
+
+				for m in match_cache[dep]:
+					try:
+						for matom in revmatch_cache[m]:
+							yield matom
+						break
+					except KeyError:
+						pass
+			else:
+				for dp in dep:
+					for r in check_dep(dp):
+						yield r
+
+		rdep = frozenset(check_dep(pkg.run_dependencies))
+		bdep = frozenset(check_dep(pkg.build_dependencies))
+		pdep = frozenset(check_dep(pkg.post_dependencies))
+
+		brdep = bdep & rdep
+		bpdep = bdep & pdep
+		rpdep = rdep & pdep
+		brpdep = brdep & pdep
+
+		brdep -= brpdep
+		bpdep -= brpdep
+		rpdep -= brpdep
+
+		rdep -= brdep
+		rdep -= rpdep
+		bdep -= brdep
+		bdep -= bpdep
+		pdep -= bpdep
+		pdep -= rpdep
+
+		sys.stderr.write('%s\r' % ANSI.clear_line)
+		for t, dep_pkgs in (
+				('rdep', rdep),
+				('bdep', bdep),
+				('pdep', pdep),
+				('b+rdep', brdep),
+				('b+pdep', bpdep),
+				('r+pdep', rpdep),
+				('b+r+pdep', brpdep)):
+			for dep in dep_pkgs:
+				print('\t"%s" -> "%s" [label="%s"];' % (p, dep, t))
+
+	print('}')
+	sys.stderr.write('%s%sDone.%s\n'
+			% (ANSI.clear_line, ANSI.white, ANSI.reset))
+
+
+def main(prog_name, *argv):
+	opt = optparse.OptionParser(
+		prog = prog_name,
+		usage = '%prog [<packages>...]')
+	opt.add_option('-r', '--repo',
+			dest='repo', default='gentoo',
+			help='Work on given repository (default: gentoo)')
+	vals, argv = opt.parse_args(list(argv))
+
+	all_packages = set()
+
+	if argv:
+		for fn in argv:
+			with open(fn) as f:
+				for l in f:
+					all_packages.add(pm.Atom(l.strip()))
+	else:
+		sys.stderr.write('[reading package dependency spec list from stdin]')
+		for l in sys.stdin:
+			all_packages.add(pm.Atom(l.strip()))
+
+	process(pm.repositories[vals.repo], all_packages)
+
+	return 0
+
+
+if __name__ == '__main__':
+	sys.exit(main(*sys.argv))
