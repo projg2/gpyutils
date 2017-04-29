@@ -55,7 +55,7 @@ def process(repo, pkgs, mark_maints=()):
 			print('\t"%s" [color="blue"];' % p)
 		else:
 			print('\t"%s";' % p)
-	print()
+	print('')
 
 	for i, p in enumerate(pkgs):
 		# TODO: option to check deps for all versions?
