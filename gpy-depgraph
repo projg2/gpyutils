@@ -19,9 +19,12 @@ revmatch_cache = collections.defaultdict(set)
 pm = get_package_manager()
 
 
-def process(repo, pkgs):
+def process(repo, pkgs, mark_maints=()):
 	sys.stderr.write('%sPopulating match cache...%s\n'
 			% (ANSI.cyan, ANSI.reset))
+
+	mark_maints = frozenset(mark_maints)
+	mark_packages = set()
 
 	for i, p in enumerate(pkgs):
 		sys.stderr.write('%s%s%-56s%s (%s%4d%s/%s%4d%s done)\r'
@@ -34,6 +37,11 @@ def process(repo, pkgs):
 			raise ValueError('%s matches no packages!' % p)
 		match_cache[p] = matches
 		for m in matches:
+			for maint in m.maintainers:
+				if maint.email in mark_maints:
+					mark_packages.add(p)
+					break
+
 			revmatch_cache[m].add(p)
 
 	sys.stderr.write('%s%sGenerating the graph...%s\n'
@@ -43,7 +51,10 @@ def process(repo, pkgs):
 
 	# list all packages first, so we do not skip packages with no deps
 	for p in pkgs:
-		print('\t"%s";' % p)
+		if p in mark_packages:
+			print('\t"%s" [color="blue"];' % p)
+		else:
+			print('\t"%s";' % p)
 	print()
 
 	for i, p in enumerate(pkgs):
@@ -119,6 +130,9 @@ def main(prog_name, *argv):
 	opt = optparse.OptionParser(
 		prog = prog_name,
 		usage = '%prog [<packages>...]')
+	opt.add_option('-m', '--mark-maintainer',
+			dest='mark_maint', action='append',
+			help='Highlight packages maintained by specified person/project (by e-mail)')
 	opt.add_option('-r', '--repo',
 			dest='repo', default='gentoo',
 			help='Work on given repository (default: gentoo)')
@@ -136,7 +150,7 @@ def main(prog_name, *argv):
 		for l in sys.stdin:
 			all_packages.add(pm.Atom(l.strip()))
 
-	process(pm.repositories[vals.repo], all_packages)
+	process(pm.repositories[vals.repo], all_packages, vals.mark_maint)
 
 	return 0
 
