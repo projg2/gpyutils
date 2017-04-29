@@ -41,6 +41,11 @@ def process(repo, pkgs):
 	print('digraph {')
 	print('\trankdir=LR;')
 
+	# list all packages first, so we do not skip packages with no deps
+	for p in pkgs:
+		print('\t"%s";' % p)
+	print()
+
 	for i, p in enumerate(pkgs):
 		# TODO: option to check deps for all versions?
 		pkg = repo.select(p)
