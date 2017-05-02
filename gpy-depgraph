@@ -37,6 +37,26 @@ class DotPrinter(object):
 		print('}')
 
 
+class NXBase(object):
+	def start(self):
+		import networkx
+		self.nx = networkx
+		self.graph = networkx.DiGraph()
+
+	def add_node(self, label, mark=False):
+		# TODO: mark?
+		self.graph.add_node(label, marked=mark)
+
+	def add_edge(self, src, dst, label):
+		self.graph.add_edge(src, dst, label=label)
+
+
+class NXNodeDFS(NXBase):
+	def finish(self):
+		for n in self.nx.dfs_postorder_nodes(self.graph):
+			print(n)
+
+
 def process(repo, pkgs, processor, mark_maints=()):
 	sys.stderr.write('%sPopulating match cache...%s\n'
 			% (ANSI.cyan, ANSI.reset))
@@ -147,6 +167,10 @@ def main(prog_name, *argv):
 			dest='proc_cls', action='store_const',
 			const=DotPrinter, default=DotPrinter,
 			help='Output a .dot graph (default)')
+	opt.add_option('-n', '--node-dfs',
+			dest='proc_cls', action='store_const',
+			const=NXNodeDFS,
+			help='Produce list of nodes in depth-first-search (uses networkx)')
 	opt.add_option('-m', '--mark-maintainer',
 			dest='mark_maint', action='append',
 			help='Highlight packages maintained by specified person/project (by e-mail)')
