@@ -19,7 +19,25 @@ revmatch_cache = collections.defaultdict(set)
 pm = get_package_manager()
 
 
-def process(repo, pkgs, mark_maints=()):
+class DotPrinter(object):
+	def start(self):
+		print('digraph {')
+		print('\trankdir=LR;')
+
+	def add_node(self, label, mark=False):
+		if mark:
+			print('\t"%s" [color="blue"];' % label)
+		else:
+			print('\t"%s";' % label)
+
+	def add_edge(self, src, dst, label):
+		print('\t"%s" -> "%s" [label="%s"];' % (src, dst, label))
+
+	def finish(self):
+		print('}')
+
+
+def process(repo, pkgs, processor, mark_maints=()):
 	sys.stderr.write('%sPopulating match cache...%s\n'
 			% (ANSI.cyan, ANSI.reset))
 
@@ -46,16 +64,11 @@ def process(repo, pkgs, mark_maints=()):
 
 	sys.stderr.write('%s%sGenerating the graph...%s\n'
 			% (ANSI.clear_line, ANSI.cyan, ANSI.reset))
-	print('digraph {')
-	print('\trankdir=LR;')
+	processor.start()
 
 	# list all packages first, so we do not skip packages with no deps
 	for p in pkgs:
-		if p in mark_packages:
-			print('\t"%s" [color="blue"];' % p)
-		else:
-			print('\t"%s";' % p)
-	print('')
+		processor.add_node(p, p in mark_packages)
 
 	for i, p in enumerate(pkgs):
 		# TODO: option to check deps for all versions?
@@ -119,17 +132,21 @@ def process(repo, pkgs, mark_maints=()):
 				('r+pdep', rpdep),
 				('b+r+pdep', brpdep)):
 			for dep in dep_pkgs:
-				print('\t"%s" -> "%s" [label="%s"];' % (p, dep, t))
+				processor.add_edge(p, dep, t)
 
-	print('}')
 	sys.stderr.write('%s%sDone.%s\n'
 			% (ANSI.clear_line, ANSI.white, ANSI.reset))
+	processor.finish()
 
 
 def main(prog_name, *argv):
 	opt = optparse.OptionParser(
 		prog = prog_name,
 		usage = '%prog [<packages>...]')
+	opt.add_option('-d', '--dot-print',
+			dest='proc_cls', action='store_const',
+			const=DotPrinter, default=DotPrinter,
+			help='Output a .dot graph (default)')
 	opt.add_option('-m', '--mark-maintainer',
 			dest='mark_maint', action='append',
 			help='Highlight packages maintained by specified person/project (by e-mail)')
@@ -150,7 +167,8 @@ def main(prog_name, *argv):
 		for l in sys.stdin:
 			all_packages.add(pm.Atom(l.strip()))
 
-	process(pm.repositories[vals.repo], all_packages, vals.mark_maint)
+	process(pm.repositories[vals.repo], all_packages, vals.proc_cls(),
+			vals.mark_maint)
 
 	return 0
 
