@@ -2,6 +2,19 @@ gpyutils
 ========
 
 
+gpy-cands
+---------
+
+gpy-cands searches the tree for packages that could be updated to use
+the python-r1 suite eclasses. Technically, it either detects packages
+using the python.eclass or depending on the Python interpreter directly.
+
+The output consists of the package followed by the currently used
+eclass and the suggested -r1 eclass.
+
+The scan is done per-repository.
+
+
 gpy-depcheck
 ------------
 
@@ -17,6 +30,22 @@ of its dependencies that lack ``[${PYTHON_USEDEP}]``.
 The scan can done per-repository or per-package.
 
 
+gpy-depgraph
+------------
+
+gpy-depgraph is an auxiliary tool to convert plain package lists into
+dependency graphs. It can be used to ease maintenance tasks by ordering
+them per-dependency.
+
+The package list is either read from files (specified as parameters) or
+from stdin. The default output format is a .dot graph (suitable for
+further processing using GraphViz).
+
+The operation is done using supplied package lists and a specified
+repository (to obtain dependencies). All packages must be available
+in the repository.
+
+
 gpy-drop-dead-impls
 -------------------
 
@@ -28,6 +57,43 @@ The output is a plain list of packages. If ``--fix`` is used, script
 can also modify ebuilds.
 
 The scan can be done per-repository or per-package.
+
+
+gpy-find-missing-meta
+---------------------
+
+gpy-find-missing-meta scans the repository for common mistakes in -r1
+packages. The issues found include:
+
+- PYTHON_COMPAT declared in eclass,
+
+- missing PYTHON_REQUIRED_USE in REQUIRED_USE,
+
+- missing PYTHON_DEPS in (R)DEPEND,
+
+- PYTHON_DEPS used in RDEPEND w/ python-any-r1.
+
+It could be possibly amended with additional checks in the future.
+
+The output consists of the -r1 package followed by a message explaining
+the issue.
+
+The scan can done per-repository or per-package.
+
+
+gpy-impl
+--------
+
+gpy-impl is a simple PYTHON_COMPAT mangler. It is based on the interface
+exposed by ekeyword.
+
+It takes an ebuild path followed by one or more Python implementations,
+optionally prefixed using '-', '%' or '+'. The two former prefixes cause
+it to remove the specific implementation from PYTHON_COMPAT, otherwise
+the implementation is added to PYTHON_COMPAT. The script outputs
+a 'diff' of PYTHON_COMPAT afterwards.
+
+The script operates on the specified file only.
 
 
 gpy-showimpls
