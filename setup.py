@@ -41,8 +41,6 @@ setup(
 		packages = ['gpyutils'],
 		scripts = [
 			'gpy-cands',
-			'gpy-counts',
-			'gpy-depcands',
 			'gpy-depcheck',
 			'gpy-depgraph',
 			'gpy-drop-dead-impls',
