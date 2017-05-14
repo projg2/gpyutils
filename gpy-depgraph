@@ -162,7 +162,7 @@ def process(repo, pkgs, processor, mark_maints=()):
 def main(prog_name, *argv):
 	opt = optparse.OptionParser(
 		prog = prog_name,
-		usage = '%prog [<packages>...]')
+		usage = '%prog [<files>...]')
 	opt.add_option('-d', '--dot-print',
 			dest='proc_cls', action='store_const',
 			const=DotPrinter, default=DotPrinter,
