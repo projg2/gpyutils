@@ -36,7 +36,7 @@ setup(
 		version = '0.1.4',
 		author = 'Michał Górny',
 		author_email = 'mgorny@gentoo.org',
-		url = 'https://bitbucket.org/mgorny/gpyutils',
+		url = 'https://github.com/mgorny/gpyutils',
 
 		packages = ['gpyutils'],
 		scripts = [
