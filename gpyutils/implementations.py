@@ -78,7 +78,7 @@ def read_implementations(pkg_db):
 
 def get_impl_by_name(name):
 	for i in implementations:
-		if i.r1_name == name or i.r0_name == name:
+		if name in (i.r1_name, i.r0_name, i.short_name):
 			return i
 	raise KeyError(name)
 
