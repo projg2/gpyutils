@@ -471,3 +471,7 @@ class EbuildMangler(object):
 
 	def remove(self, impl):
 		self._value.remove(impl)
+
+	@property
+	def value(self):
+		return str(self._value)
