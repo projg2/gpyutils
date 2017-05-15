@@ -172,7 +172,7 @@ def main(prog_name, *argv):
 			const=NXNodeDFS,
 			help='Produce list of nodes in depth-first-search (uses networkx)')
 	opt.add_option('-m', '--mark-maintainer',
-			dest='mark_maint', action='append', default=(),
+			dest='mark_maint', action='append', default=[],
 			help='Highlight packages maintained by specified person/project (by e-mail)')
 	opt.add_option('-r', '--repo',
 			dest='repo', default='gentoo',
