@@ -76,7 +76,7 @@ def find_redundant(pkgs):
 				redundant = False
 
 		# then determine non-redundancy via impls
-		impls = set(i for i in get_python_impls(p)
+		impls = set(i for i in get_python_impls(p) or ()
 				if i.status not in (Status.dead, Status.future))
 		if not max_impls.issuperset(impls):
 			redundant = False
