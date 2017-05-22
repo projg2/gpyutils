@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+#	vim:fileencoding=utf-8
+# (c) 2017 Michał Górny <mgorny@gentoo.org>
+# Released under the terms of the 2-clause BSD license.
+
+import pkg_resources
+import sys
+
+import IPython
+
+
+def main():
+	issues = set()
+
+	for p in pkg_resources.working_set:
+		try:
+			pkg_resources.require(str(p.as_requirement()))
+		except pkg_resources.DistributionNotFound as e:
+			issues.add((str(e.requirers), 'MISSING', str(e.req)))
+		except pkg_resources.ContextualVersionConflict as e:
+			issues.add((str(e.required_by), 'VERSION CONFLICT', str(e.req), str(e.dist)))
+
+	for i in sorted(issues):
+		print(' '.join(i))
+
+
+if __name__ == '__main__':
+	sys.exit(main(*sys.argv[1:]))

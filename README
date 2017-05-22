@@ -150,4 +150,18 @@ can also modify ebuilds.
 The scan can be done per-repository or per-package.
 
 
+gpy-verify-installed-reqs
+=========================
+
+A simple tool to help verifying that the package requirements (as seen
+by setuptools/pkg_resources) are satisfied for all installed packages.
+If they are not, entry_points installed by the package (or its
+dependencies) will not work and/or setuptools may attempt to fetch
+missing packages.
+
+This tool takes no parameters. It processes all installed packages
+for the Python version it is started with and outputs all issues found,
+one per line.
+
+
 .. vim:tw=72:ft=rst:spell:spelllang=en
