@@ -48,6 +48,7 @@ setup(
 			'gpy-impl',
 			'gpy-showimpls',
 			'gpy-upgrade-impl',
+			'gpy-verify-installed-reqs',
 		],
 
 		classifiers = [
