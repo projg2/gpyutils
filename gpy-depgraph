@@ -122,37 +122,25 @@ def process(repo, pkgs, processor, mark_maints=()):
 					for r in check_dep(dp):
 						yield r
 
-		rdep = frozenset(check_dep(pkg.run_dependencies))
-		bdep = frozenset(check_dep(pkg.build_dependencies))
-		pdep = frozenset(check_dep(pkg.post_dependencies))
-
-		brdep = bdep & rdep
-		bpdep = bdep & pdep
-		rpdep = rdep & pdep
-		brpdep = brdep & pdep
-
-		brdep -= brpdep
-		bpdep -= brpdep
-		rpdep -= brpdep
-
-		rdep -= brdep
-		rdep -= rpdep
-		bdep -= brdep
-		bdep -= bpdep
-		pdep -= bpdep
-		pdep -= rpdep
+		dep_sets = (
+			('r', frozenset(check_dep(pkg.run_dependencies))),
+			('b', frozenset(check_dep(pkg.build_dependencies))),
+			('p', frozenset(check_dep(pkg.post_dependencies))),
+		)
+		combined = set()
+		for t, dep_pkgs in dep_sets:
+			combined |= dep_pkgs
 
 		sys.stderr.write('%s\r' % ANSI.clear_line)
-		for t, dep_pkgs in (
-				('rdep', rdep),
-				('bdep', bdep),
-				('pdep', pdep),
-				('b+rdep', brdep),
-				('b+pdep', bpdep),
-				('r+pdep', rpdep),
-				('b+r+pdep', brpdep)):
-			for dep in dep_pkgs:
-				processor.add_edge(p, dep, t)
+		for dep in combined:
+			dep_types = []
+			for t, dep_pkgs in dep_sets:
+				if dep in dep_pkgs:
+					dep_types.append(t)
+			assert dep_types
+
+			dep_type = '+'.join(dep_types) + 'dep'
+			processor.add_edge(p, dep, dep_type)
 
 	sys.stderr.write('%s%sDone.%s\n'
 			% (ANSI.clear_line, ANSI.white, ANSI.reset))
