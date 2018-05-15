@@ -57,11 +57,23 @@ class NXNodeDFS(NXBase):
 			print(n)
 
 
-def process(repo, pkgs, processor, mark_maints=()):
+class MaintainerMarker(object):
+	""" Class providing node marking based on maintainer. """
+
+	def __init__(self, maintainers):
+		self.maintainers = frozenset(maintainers)
+
+	def should_mark(self, p):
+		for maint in p.maintainers:
+			if maint.email in self.maintainers:
+				return True
+		return False
+
+
+def process(repo, pkgs, processor, marker):
 	sys.stderr.write('%sPopulating match cache...%s\n'
 			% (ANSI.cyan, ANSI.reset))
 
-	mark_maints = frozenset(mark_maints)
 	mark_packages = set()
 
 	for i, p in enumerate(pkgs):
@@ -75,10 +87,8 @@ def process(repo, pkgs, processor, mark_maints=()):
 			raise ValueError('%s matches no packages!' % p)
 		match_cache[p] = matches
 		for m in matches:
-			for maint in m.maintainers:
-				if maint.email in mark_maints:
-					mark_packages.add(p)
-					break
+			if marker.should_mark(m):
+				mark_packages.add(p)
 
 			revmatch_cache[m].add(p)
 
@@ -180,7 +190,7 @@ def main(prog_name, *argv):
 			all_packages.add(pm.Atom(l.strip()))
 
 	process(pm.repositories[vals.repo], all_packages, vals.proc_cls(),
-			vals.mark_maint)
+			MaintainerMarker(vals.mark_maint))
 
 	return 0
 
