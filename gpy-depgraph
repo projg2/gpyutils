@@ -14,11 +14,6 @@ import optparse
 import sys
 
 
-match_cache = {}
-revmatch_cache = collections.defaultdict(set)
-pm = get_package_manager()
-
-
 class DotPrinter(object):
 	def start(self):
 		print('digraph {')
@@ -57,6 +52,64 @@ class NXNodeDFS(NXBase):
 			print(n)
 
 
+class PackageSource(object):
+	""" Class providing abstraction over package metadata source. """
+
+	def __init__(self, repo_name):
+		self.pm = get_package_manager()
+		self.repo = self.pm.repositories[repo_name]
+		self.match_cache = {}
+		self.revmatch_cache = collections.defaultdict(set)
+
+	def cache(self, p):
+		matches = frozenset(self.repo.filter(p))
+		if not matches:
+			raise ValueError('%s matches no packages!' % p)
+		self.match_cache[p] = matches
+		for m in matches:
+			self.revmatch_cache[m].add(p)
+
+	def is_marked(self, p, marker):
+		for m in self.match_cache[p]:
+			if marker.should_mark(m):
+				return True
+		return False
+
+	def get_dep_sets(self, p):
+		# TODO: option to check deps for all versions?
+		pkg = self.repo.select(p)
+
+		def check_dep(dep):
+			if isinstance(dep, PMAtom):
+				if dep.blocking:
+					return
+
+				# USE deps cause problems with matching, strip them
+				# Note to self: this is ugly.
+				dep = self.pm.Atom(str(dep).partition('[')[0])
+
+				if dep not in self.match_cache:
+					self.match_cache[dep] = frozenset(self.repo.filter(dep))
+
+				for m in self.match_cache[dep]:
+					try:
+						for matom in self.revmatch_cache[m]:
+							yield matom
+						break
+					except KeyError:
+						pass
+			else:
+				for dp in dep:
+					for r in check_dep(dp):
+						yield r
+
+		return (
+			('r', frozenset(check_dep(pkg.run_dependencies))),
+			('b', frozenset(check_dep(pkg.build_dependencies))),
+			('p', frozenset(check_dep(pkg.post_dependencies))),
+		)
+
+
 class MaintainerMarker(object):
 	""" Class providing node marking based on maintainer. """
 
@@ -70,11 +123,9 @@ class MaintainerMarker(object):
 		return False
 
 
-def process(repo, pkgs, processor, marker):
+def process(pkgsrc, pkgs, processor, marker):
 	sys.stderr.write('%sPopulating match cache...%s\n'
 			% (ANSI.cyan, ANSI.reset))
-
-	mark_packages = set()
 
 	for i, p in enumerate(pkgs):
 		sys.stderr.write('%s%s%-56s%s (%s%4d%s/%s%4d%s done)\r'
@@ -82,15 +133,7 @@ def process(repo, pkgs, processor, marker):
 					ANSI.white, i, ANSI.reset,
 					ANSI.white, len(pkgs), ANSI.reset))
 
-		matches = frozenset(repo.filter(p))
-		if not matches:
-			raise ValueError('%s matches no packages!' % p)
-		match_cache[p] = matches
-		for m in matches:
-			if marker.should_mark(m):
-				mark_packages.add(p)
-
-			revmatch_cache[m].add(p)
+		pkgsrc.cache(p)
 
 	sys.stderr.write('%s%sGenerating the graph...%s\n'
 			% (ANSI.clear_line, ANSI.cyan, ANSI.reset))
@@ -98,45 +141,15 @@ def process(repo, pkgs, processor, marker):
 
 	# list all packages first, so we do not skip packages with no deps
 	for p in pkgs:
-		processor.add_node(p, p in mark_packages)
+		processor.add_node(p, pkgsrc.is_marked(p, marker))
 
 	for i, p in enumerate(pkgs):
-		# TODO: option to check deps for all versions?
-		pkg = repo.select(p)
 		sys.stderr.write('%s%s%-56s%s (%s%4d%s/%s%4d%s done)\r'
 				% (ANSI.clear_line, ANSI.green, p, ANSI.reset,
 					ANSI.white, i, ANSI.reset,
 					ANSI.white, len(pkgs), ANSI.reset))
+		dep_sets = pkgsrc.get_dep_sets(p)
 
-		def check_dep(dep):
-			if isinstance(dep, PMAtom):
-				if dep.blocking:
-					return
-
-				# USE deps cause problems with matching, strip them
-				# Note to self: this is ugly.
-				dep = pm.Atom(str(dep).partition('[')[0])
-
-				if dep not in match_cache:
-					match_cache[dep] = frozenset(repo.filter(dep))
-
-				for m in match_cache[dep]:
-					try:
-						for matom in revmatch_cache[m]:
-							yield matom
-						break
-					except KeyError:
-						pass
-			else:
-				for dp in dep:
-					for r in check_dep(dp):
-						yield r
-
-		dep_sets = (
-			('r', frozenset(check_dep(pkg.run_dependencies))),
-			('b', frozenset(check_dep(pkg.build_dependencies))),
-			('p', frozenset(check_dep(pkg.post_dependencies))),
-		)
 		combined = set()
 		for t, dep_pkgs in dep_sets:
 			combined |= dep_pkgs
@@ -183,13 +196,14 @@ def main(prog_name, *argv):
 		for fn in argv:
 			with open(fn) as f:
 				for l in f:
-					all_packages.add(pm.Atom(l.strip()))
+					all_packages.add(l.strip())
 	else:
 		sys.stderr.write('[reading package dependency spec list from stdin]')
 		for l in sys.stdin:
-			all_packages.add(pm.Atom(l.strip()))
+			all_packages.add(l.strip())
 
-	process(pm.repositories[vals.repo], all_packages, vals.proc_cls(),
+	pkgsrc = PackageSource(vals.repo)
+	process(pkgsrc, all_packages, vals.proc_cls(),
 			MaintainerMarker(vals.mark_maint))
 
 	return 0
