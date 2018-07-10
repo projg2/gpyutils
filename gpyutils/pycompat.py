@@ -1,8 +1,13 @@
 #	vim:fileencoding=utf-8
-# (c) 2013 Michał Górny <mgorny@gentoo.org>
+# (c) 2013-2018 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
-import os, os.path, re, tempfile
+import os
+import os.path
+import re
+import shutil
+import tempfile
+
 
 class Whitespace(str):
 	def __init__(self, s):
@@ -457,6 +462,7 @@ class EbuildMangler(object):
 			tmp_path = f.name
 			f.write(data.encode('utf8'))
 
+		shutil.copymode(self._path, tmp_path)
 		os.rename(tmp_path, self._path)
 
 	def __enter__(self):
