@@ -39,7 +39,10 @@ def process(pkgs, fix=False):
 			if not isinstance(t, PkgType.python_r1):
 				continue
 
-			impls = get_python_impls(p)
+			try:
+				impls = get_python_impls(p, need_dead=True)
+			except gentoopm.exceptions.InvalidBashCodeError:
+				continue
 			assert(impls is not None)
 
 			found_one = True

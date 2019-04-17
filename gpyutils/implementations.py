@@ -89,8 +89,8 @@ class PythonImpls(object):
 				yield i
 
 class PythonR1Impls(PythonImpls):
-	def __init__(self, pkg, subtype):
-		if subtype != PkgSubType.python_any:
+	def __init__(self, pkg, subtype, need_dead=False):
+		if subtype != PkgSubType.python_any and not need_dead:
 			# IUSE should be much faster than env
 			# len("python_targets_") == 15
 			self._impls = [x[15:] for x in pkg.use
@@ -112,11 +112,11 @@ class PythonR0Impls(PythonImpls):
 		return i.r0_name and not any(fnmatch.fnmatch(i.r0_name, r)
 				for r in self._restrict)
 
-def get_python_impls(pkg):
+def get_python_impls(pkg, need_dead=False):
 	t = guess_package_type(pkg, check_deps=False)
 
 	if isinstance(t, PkgType.python_r1):
-		return PythonR1Impls(pkg, t.subtype)
+		return PythonR1Impls(pkg, t.subtype, need_dead=need_dead)
 	elif isinstance(t, PkgType.python_r0):
 		return PythonR0Impls(pkg)
 	return None
