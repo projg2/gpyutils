@@ -44,7 +44,6 @@ setup(
 			'gpy-depcheck',
 			'gpy-depgraph',
 			'gpy-drop-dead-impls',
-			'gpy-find-missing-meta',
 			'gpy-impl',
 			'gpy-showimpls',
 			'gpy-upgrade-impl',
