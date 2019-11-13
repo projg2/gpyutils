@@ -9,8 +9,8 @@ from gentoopm.exceptions import EmptyPackageSetError
 
 from gpyutils.ansi import ANSI
 
+import argparse
 import collections
-import optparse
 import sys
 
 
@@ -49,6 +49,15 @@ class NXBase(object):
 class NXNodeDFS(NXBase):
 	def finish(self):
 		for n in self.nx.dfs_postorder_nodes(self.graph):
+			print(n)
+
+
+class NXNodeDeps(NXBase):
+	def __init__(self, pkg):
+		self.pkg = pkg
+
+	def finish(self):
+		for n in self.nx.nodes(self.nx.dfs_tree(self.graph, self.pkg)):
 			print(n)
 
 
@@ -171,29 +180,34 @@ def process(pkgsrc, pkgs, processor, marker):
 
 
 def main(prog_name, *argv):
-	opt = optparse.OptionParser(
-		prog = prog_name,
-		usage = '%prog [<files>...]')
-	opt.add_option('-d', '--dot-print',
+	opt = argparse.ArgumentParser(prog = prog_name)
+	action = opt.add_mutually_exclusive_group()
+	action.add_argument('-d', '--dot-print',
 			dest='proc_cls', action='store_const',
-			const=DotPrinter, default=DotPrinter,
+			const=DotPrinter(), default=DotPrinter(),
 			help='Output a .dot graph (default)')
-	opt.add_option('-n', '--node-dfs',
+	action.add_argument('-D', '--dependencies', metavar='PACKAGE',
+			help='Print list of all dependencies of given PACKAGE (uses networkx)')
+	action.add_argument('-n', '--node-dfs',
 			dest='proc_cls', action='store_const',
-			const=NXNodeDFS,
+			const=NXNodeDFS(),
 			help='Produce list of nodes in depth-first-search (uses networkx)')
-	opt.add_option('-m', '--mark-maintainer',
+	opt.add_argument('-m', '--mark-maintainer',
 			dest='mark_maint', action='append', default=[],
 			help='Highlight packages maintained by specified person/project (by e-mail)')
-	opt.add_option('-r', '--repo',
+	opt.add_argument('-r', '--repo',
 			dest='repo', default='gentoo',
 			help='Work on given repository (default: gentoo)')
-	vals, argv = opt.parse_args(list(argv))
+	opt.add_argument('file', nargs='*')
+	vals = opt.parse_args(list(argv))
+
+	if vals.dependencies:
+		vals.proc_cls = NXNodeDeps(vals.dependencies)
 
 	all_packages = set()
 
-	if argv:
-		for fn in argv:
+	if vals.file:
+		for fn in vals.file:
 			with open(fn) as f:
 				for l in f:
 					all_packages.add(l.strip())
@@ -203,7 +217,7 @@ def main(prog_name, *argv):
 			all_packages.add(l.strip())
 
 	pkgsrc = PackageSource(vals.repo)
-	process(pkgsrc, all_packages, vals.proc_cls(),
+	process(pkgsrc, all_packages, vals.proc_cls,
 			MaintainerMarker(vals.mark_maint))
 
 	return 0
