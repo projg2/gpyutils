@@ -112,11 +112,11 @@ class PackageSource(object):
 					for r in check_dep(dp):
 						yield r
 
-		return (
-			('r', frozenset(check_dep(pkg.run_dependencies))),
-			('b', frozenset(check_dep(pkg.build_dependencies))),
-			('p', frozenset(check_dep(pkg.post_dependencies))),
-		)
+		yield ('r', frozenset(check_dep(pkg.run_dependencies)))
+		yield ('b', frozenset(check_dep(pkg.build_dependencies)))
+		yield ('p', frozenset(check_dep(pkg.post_dependencies)))
+		if hasattr(pkg, 'cbuild_build_dependencies'):
+			yield ('B', frozenset(check_dep(pkg.cbuild_build_dependencies)))
 
 
 class MaintainerMarker(object):
@@ -157,7 +157,7 @@ def process(pkgsrc, pkgs, processor, marker):
 				% (ANSI.clear_line, ANSI.green, p, ANSI.reset,
 					ANSI.white, i, ANSI.reset,
 					ANSI.white, len(pkgs), ANSI.reset))
-		dep_sets = pkgsrc.get_dep_sets(p)
+		dep_sets = tuple(pkgsrc.get_dep_sets(p))
 
 		combined = set()
 		for t, dep_pkgs in dep_sets:

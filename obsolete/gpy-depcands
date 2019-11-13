@@ -73,9 +73,14 @@ def process(pkgs, output, assume_r1=False, list_all=False):
 
 					output[dep_pkg] = 1
 
-					for d in (dep_pkg.run_dependencies,
-							dep_pkg.build_dependencies,
-							dep_pkg.post_dependencies):
+					dep_groups = (
+						dep_pkg.run_dependencies,
+						dep_pkg.build_dependencies,
+						dep_pkg.post_dependencies
+					)
+					if hasattr(dep_pkg, 'cbuild_build_dependencies'):
+						dep_groups += (dep_pkg.cbuild_build_dependencies,)
+					for d in dep_groups:
 						check_dep(d, depth + 1, was_first, dep_pkg)
 			else:
 				for dp in dep:
@@ -87,7 +92,14 @@ def process(pkgs, output, assume_r1=False, list_all=False):
 		if not assume_r1 and not isinstance(t, PkgType.python_r1):
 			continue
 
-		for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
+		dep_groups = (
+			p.run_dependencies,
+			p.build_dependencies,
+			p.post_dependencies
+		)
+		if hasattr(p, 'cbuild_build_dependencies'):
+			dep_groups += (p.cbuild_build_dependencies,)
+		for d in dep_groups:
 			check_dep(d)
 
 	sys.stderr.write('%s%sDone.%s\n'

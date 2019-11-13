@@ -89,7 +89,11 @@ def process(pkgs, repo):
 
 						found_missing.append(dep)
 
-			for d in (p.run_dependencies, p.build_dependencies, p.post_dependencies):
+			dep_groups = (p.run_dependencies, p.build_dependencies,
+					p.post_dependencies)
+			if hasattr(p, 'cbuild_build_dependencies'):
+				dep_groups += (p.cbuild_build_dependencies,)
+			for d in dep_groups:
 				check_dep(d)
 			if found_missing:
 				total_need += 1

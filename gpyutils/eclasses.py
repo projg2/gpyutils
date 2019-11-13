@@ -100,4 +100,7 @@ def guess_package_type(pkg, check_deps=True):
 			return PkgType.python_r0(PkgSubType.python_rdep)
 		if has_python_in_deptree(pkg.build_dependencies):
 			return PkgType.python_r0(PkgSubType.python_any)
+		if hasattr(pkg, 'cbuild_build_dependencies'):
+			if has_python_in_deptree(pkg.cbuild_build_dependencies):
+				return PkgType.python_r0(PkgSubType.python_any)
 	return PkgType.non_python()
