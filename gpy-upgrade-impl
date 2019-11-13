@@ -12,7 +12,7 @@ from gpyutils.implementations import (get_python_impls, get_impl_by_name,
 from gpyutils.packages import get_package_class, group_packages, PackageClass
 from gpyutils.pycompat import EbuildMangler
 
-import optparse, sys
+import argparse, sys
 
 pm = get_package_manager()
 
@@ -97,39 +97,36 @@ def process(pkgs, old, new, fix=False, stabilizations=False):
 			% (ANSI.clear_line, ANSI.white, ANSI.reset))
 
 def main(prog_name, *argv):
-	opt = optparse.OptionParser(
-		prog = prog_name,
-		usage = '%prog <old-impl> <new-impl> [<packages>...]')
-	opt.add_option('-f', '--fix', action='store_true',
-			dest='fix', default=False,
+	opt = argparse.ArgumentParser(prog=prog_name)
+	me = opt.add_mutually_exclusive_group()
+	me.add_argument('-f', '--fix', action='store_true',
 			help='Automatically add <new-impl> to PYTHON_COMPAT in the newest testing (and live) ebuild')
-	opt.add_option('-r', '--repo',
-			dest='repo', default='gentoo',
-			help='Work on given repository (default: gentoo)')
-	opt.add_option('-s', '--stabilizations', action='store_true',
-			dest='stabilizations', default=False,
+	me.add_argument('-s', '--stabilizations', action='store_true',
 			help='Find stabilization candidates needed for <new-impl> support')
-	vals, argv = opt.parse_args(list(argv))
-
-	if vals.fix and vals.stabilizations:
-		opt.error('--fix and --stabilizations options are mutually exclusive')
-	if len(argv) < 2:
-		opt.error('Two implementations need to be provided')
+	opt.add_argument('-r', '--repo', default='gentoo',
+			help='Work on given repository (default: gentoo)')
+	opt.add_argument('old', metavar='old-impl',
+			help='Old implementation')
+	opt.add_argument('new', metavar='new-impl',
+			help='New implementation')
+	opt.add_argument('package', nargs='*',
+			help='Packages to scan (whole repo if none provided')
+	vals = opt.parse_args(list(argv))
 
 	read_implementations(pm)
 
-	old = get_impl_by_name(argv[0])
-	new = get_impl_by_name(argv[1])
+	old = get_impl_by_name(vals.old)
+	new = get_impl_by_name(vals.new)
 
 	if old.supports_r0() and not new.supports_r0():
 		sys.stderr.write('%s[warning: new-impl is not supported by python.eclass\n python.eclass packages will be omitted]%s\n'
 				% (ANSI.brown, ANSI.reset))
 
-	if len(argv) == 2:
+	if not vals.package:
 		process(pm.repositories[vals.repo], old, new, fix=vals.fix,
 				stabilizations=vals.stabilizations)
 	else:
-		for pkg in argv[2:]:
+		for pkg in vals.package:
 			process(pm.repositories[vals.repo].filter(pkg), old, new,
 				fix=vals.fix, stabilizations=vals.stabilizations)
 
