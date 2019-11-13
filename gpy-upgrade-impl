@@ -21,7 +21,7 @@ import sys
 pm = get_package_manager()
 
 
-def process_one(p, old, new, fix=False, stabilizations=False):
+def process_one(p, repo, old, new, fix=False, stabilizations=False):
 	impls = get_python_impls(p)
 	if impls is None:
 		# not a Python package
@@ -33,7 +33,7 @@ def process_one(p, old, new, fix=False, stabilizations=False):
 		has_in_stable = False
 		has_any_stable = False
 
-		for p in reversed(pg):
+		for p in sorted(repo.filter(p.key), reverse=True):
 			if get_package_class(p) == PackageClass.stable:
 				impls = (get_python_impls(p) or ())
 				if new in impls:
@@ -64,7 +64,7 @@ def process_one(p, old, new, fix=False, stabilizations=False):
 					PkgType.python_r1):
 				upd_list = []
 
-				for p in reversed(pg):
+				for p in sorted(repo.filter(p.key), reverse=True):
 					upd_list.append(p.path)
 
 					# update all non-keyworded (possibly live) ebuilds
@@ -139,7 +139,8 @@ def process(repo, pkgs, old, new, fix=False, stabilizations=False, deps=False,
 					ANSI.white, total_pkg, ANSI.reset))
 
 		p = pg[-1]
-		r = process_one(p, old, new, fix=fix, stabilizations=stabilizations)
+		r = process_one(p, repo, old, new,
+				fix=fix, stabilizations=stabilizations)
 
 		if r is None:
 			continue
@@ -148,7 +149,7 @@ def process(repo, pkgs, old, new, fix=False, stabilizations=False, deps=False,
 			total_upd += 1
 			if deps:
 				process_pkg_deps(repo, p, functools.partial(
-					process_one, old=old, new=new, fix=fix,
+					process_one, repo=repo, old=old, new=new, fix=fix,
 					stabilizations=stabilizations), package_cache)
 
 	sys.stderr.write('%s%sDone.%s\n'
