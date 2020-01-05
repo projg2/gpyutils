@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 #	vim:fileencoding=utf-8
-# (c) 2013 Michał Górny <mgorny@gentoo.org>
+# (c) 2013-2020 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from gentoopm import get_package_manager
+import gentoopm.exceptions
 
 from gpyutils.ansi import ANSI
 from gpyutils.eclasses import guess_package_type, PkgType
@@ -39,9 +40,10 @@ def process(pkgs, fix=False):
 			if not isinstance(t, PkgType.python_r1):
 				continue
 
+			print(p)
 			try:
 				impls = get_python_impls(p, need_dead=True)
-			except gentoopm.exceptions.InvalidBashCodeError:
+			except (gentoopm.exceptions.InvalidBashCodeError, OSError):
 				continue
 			assert(impls is not None)
 
