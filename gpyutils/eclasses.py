@@ -22,11 +22,6 @@ def has_python_in_deptree(dep):
 class PkgSubType(object):
 	""" Package sub-type. """
 
-	class distutils(EnumObj(5)):
-		""" distutils-r1 / distutils """
-		eclass_r1 = 'distutils-r1'
-		eclass_r0 = 'distutils'
-
 	class python(EnumObj(4)):
 		""" python-r1 / multi-ABI python """
 		eclass_r1 = 'python-r1'
@@ -47,7 +42,7 @@ class PkgSubType(object):
 		eclass_r1 = 'python-any-r1'
 		eclass_r0 = '(none)'
 
-	all_subtypes = (distutils, python, python_single, python_rdep, python_any)
+	all_subtypes = (python, python_single, python_rdep, python_any)
 
 class PkgType(object):
 	""" Guess package type from inherited eclasses. """
@@ -88,12 +83,9 @@ def guess_package_type(pkg, check_deps=True):
 			return PkgType.python_r1(s)
 
 	if 'python' in pkg.inherits:
-		if 'distutils' in pkg.inherits:
-			return PkgType.python_r0(PkgSubType.distutils)
-		else:
-			# subtype check involves running bash
-			# so better keep it lazy
-			return PkgType.python_r0(pkg, lazy=True)
+		# subtype check involves running bash
+		# so better keep it lazy
+		return PkgType.python_r0(pkg, lazy=True)
 	elif check_deps:
 		if (has_python_in_deptree(pkg.run_dependencies)
 				or has_python_in_deptree(pkg.post_dependencies)):
