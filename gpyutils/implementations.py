@@ -92,9 +92,14 @@ class PythonR1Impls(PythonImpls):
 	def __init__(self, pkg, subtype, need_dead=False):
 		if subtype != PkgSubType.python_any and not need_dead:
 			# IUSE should be much faster than env
-			# len("python_targets_") == 15
-			self._impls = [x[15:] for x in pkg.use
-					if x.startswith('python_targets_')]
+			if subtype == PkgSubType.python_single:
+				# len("python_single_target_") == 21
+				self._impls = [x[21:] for x in pkg.use
+						if x.startswith('python_single_target_')]
+			else: # python_r1
+				# len("python_targets_") == 15
+				self._impls = [x[15:] for x in pkg.use
+						if x.startswith('python_targets_')]
 		else:
 			self._impls = pkg.environ['PYTHON_COMPAT[*]'].split()
 
