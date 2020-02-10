@@ -65,7 +65,7 @@ def process(pkgs):
 				unused_tag = ' '
 
 			print('%16s: %s %s %s %s' % (p.version, keyw_tag,
-				eclass_tag, unused_tag, ' '.join(output)))
+				eclass_tag, unused_tag, ' '.join(output).rstrip()))
 
 def main(prog_name, *argv):
 	if not argv:
