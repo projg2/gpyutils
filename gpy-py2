@@ -20,17 +20,25 @@ import sys
 pm = get_package_manager()
 
 
-def process_one(p, repo, py2):
+def process_one(p, repo, py2, py3too):
 	impls = get_python_impls(p)
 	if impls is None:
 		# not a Python package
 		return None
 
-	# only pure py2
 	if py2 not in impls:
 		return False
-	for i in impls:
-		if i.r1_name.startswith('python3'):
+	if not py3too:
+		# only pure py2
+		for i in impls:
+			if i.r1_name.startswith('python3'):
+				return False
+	else:
+		# only py2+py3
+		for i in impls:
+			if i.r1_name.startswith('python3'):
+				break
+		else:
 			return False
 
 	# in case stdout & stderr goes to the same console,
@@ -40,7 +48,7 @@ def process_one(p, repo, py2):
 	return True
 
 
-def process(repo, pkgs, py2):
+def process(repo, pkgs, py2, py3too):
 	total_upd = 0
 	total_pkg = 0
 
@@ -54,7 +62,7 @@ def process(repo, pkgs, py2):
 					ANSI.white, total_pkg, ANSI.reset))
 
 		p = pg[-1]
-		r = process_one(p, repo, py2)
+		r = process_one(p, repo, py2, py3too)
 
 		if r is None:
 			continue
@@ -68,6 +76,8 @@ def process(repo, pkgs, py2):
 
 def main(prog_name, *argv):
 	opt = argparse.ArgumentParser(prog=prog_name)
+	opt.add_argument('-3', dest='py3', action='store_true',
+			help='Print packages having py2+py3 (default: pure py2)')
 	opt.add_argument('-r', '--repo', default='gentoo',
 			help='Work on given repository (default: gentoo)')
 	opt.add_argument('package', nargs='*',
@@ -80,12 +90,12 @@ def main(prog_name, *argv):
 
 	if not vals.package:
 		process(pm.repositories[vals.repo], pm.repositories[vals.repo],
-				py2)
+				py2, vals.py3)
 	else:
 		package_cache = set()
 		for pkg in vals.package:
 			process(pm.repositories[vals.repo],
-				pm.repositories[vals.repo].filter(pkg), py2)
+				pm.repositories[vals.repo].filter(pkg), py2, vals.py3)
 
 	return 0
 
