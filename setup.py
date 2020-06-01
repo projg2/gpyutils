@@ -45,6 +45,7 @@ setup(
 			'gpy-depgraph',
 			'gpy-drop-dead-impls',
 			'gpy-impl',
+			'gpy-py2',
 			'gpy-showimpls',
 			'gpy-upgrade-impl',
 			'gpy-verify-installed-reqs',
