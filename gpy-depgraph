@@ -71,9 +71,11 @@ class PackageSource(object):
 		self.revmatch_cache = collections.defaultdict(set)
 
 	def cache(self, p):
-		matches = frozenset(self.repo.filter(p))
+		# strip maintainer info
+		pkg = p.split(' [')[0]
+		matches = frozenset(self.repo.filter(pkg))
 		if not matches:
-			raise ValueError('%s matches no packages!' % p)
+			raise ValueError('%s matches no packages!' % pkg)
 		self.match_cache[p] = matches
 		for m in matches:
 			self.revmatch_cache[m].add(p)
@@ -86,7 +88,7 @@ class PackageSource(object):
 
 	def get_dep_sets(self, p):
 		# TODO: option to check deps for all versions?
-		pkg = self.repo.select(p)
+		pkg = self.repo.select(p.split(' [')[0])
 
 		def check_dep(dep):
 			if isinstance(dep, PMAtom):
