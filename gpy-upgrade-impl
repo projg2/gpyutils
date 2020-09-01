@@ -21,7 +21,25 @@ import sys
 pm = get_package_manager()
 
 
-def process_one(p, repo, old, new, fix=False, stabilizations=False):
+def obfuscate_email(email):
+	if email.endswith('@gentoo.org'):
+		return email.split('@')[0]
+	return email.replace('@', '[at]')
+
+
+def print_package(p, maintainers=False):
+	# in case stdout & stderr goes to the same console,
+	# clean up the line before printing
+	sys.stderr.write('%s\r' % ANSI.clear_line)
+	out = str(p.slotted_atom)
+	if maintainers:
+		out += ' ['
+		out += ' '.join(obfuscate_email(m.email) for m in p.maintainers)
+		out += ']'
+	print(out)
+
+
+def process_one(p, repo, old, new, printer, fix=False, stabilizations=False):
 	impls = get_python_impls(p)
 	if impls is None:
 		# not a Python package
@@ -44,10 +62,7 @@ def process_one(p, repo, old, new, fix=False, stabilizations=False):
 
 		if has_any_stable:
 			if not has_in_stable:
-				# in case stdout & stderr goes to the same console,
-				# clean up the line before printing
-				sys.stderr.write('%s\r' % ANSI.clear_line)
-				print(p.slotted_atom)
+				printer(p)
 				return True
 	elif not stabilizations and old in impls:
 		if not new.supports_r0() and isinstance(guess_package_type(p),
@@ -55,10 +70,7 @@ def process_one(p, repo, old, new, fix=False, stabilizations=False):
 			return False
 
 		if new not in impls:
-			# in case stdout & stderr goes to the same console,
-			# clean up the line before printing
-			sys.stderr.write('%s\r' % ANSI.clear_line)
-			print(p.slotted_atom)
+			printer(p)
 
 			if fix and isinstance(guess_package_type(p),
 					PkgType.python_r1):
@@ -124,7 +136,7 @@ def process_pkg_deps(repo, p, f, package_cache):
 			process_dep(repo, dep, f, package_cache)
 
 
-def process(repo, pkgs, old, new, fix=False, stabilizations=False, deps=False,
+def process(repo, pkgs, old, new, printer, fix=False, stabilizations=False, deps=False,
 		package_cache=None):
 	total_upd = 0
 	total_pkg = 0
@@ -139,7 +151,7 @@ def process(repo, pkgs, old, new, fix=False, stabilizations=False, deps=False,
 					ANSI.white, total_pkg, ANSI.reset))
 
 		p = pg[-1]
-		r = process_one(p, repo, old, new,
+		r = process_one(p, repo, old, new, printer=printer,
 				fix=fix, stabilizations=stabilizations)
 
 		if r is None:
@@ -150,7 +162,8 @@ def process(repo, pkgs, old, new, fix=False, stabilizations=False, deps=False,
 			if deps:
 				process_pkg_deps(repo, p, functools.partial(
 					process_one, repo=repo, old=old, new=new, fix=fix,
-					stabilizations=stabilizations), package_cache)
+					stabilizations=stabilizations, printer=printer),
+					package_cache)
 
 	sys.stderr.write('%s%sDone.%s\n'
 			% (ANSI.clear_line, ANSI.white, ANSI.reset))
@@ -165,6 +178,8 @@ def main(prog_name, *argv):
 			help='Find stabilization candidates needed for <new-impl> support')
 	opt.add_argument('-d', '--depends', action='store_true',
 			help='Include the dependencies of specified packages')
+	opt.add_argument('-m', '--maintainers', action='store_true',
+			help='Print maintainers of listed packages')
 	opt.add_argument('-r', '--repo', default='gentoo',
 			help='Work on given repository (default: gentoo)')
 	opt.add_argument('old', metavar='old-impl',
@@ -186,14 +201,16 @@ def main(prog_name, *argv):
 
 	if not vals.package:
 		process(pm.repositories[vals.repo], pm.repositories[vals.repo],
-				old, new, fix=vals.fix, stabilizations=vals.stabilizations)
+				old, new, fix=vals.fix, stabilizations=vals.stabilizations,
+				printer=lambda p: print_package(p, maintainers=vals.maintainers))
 	else:
 		package_cache = set()
 		for pkg in vals.package:
 			process(pm.repositories[vals.repo],
 				pm.repositories[vals.repo].filter(pkg), old, new,
 				fix=vals.fix, stabilizations=vals.stabilizations,
-				package_cache=package_cache, deps=vals.depends)
+				package_cache=package_cache, deps=vals.depends,
+				printer=lambda p: print_package(p, maintainers=vals.maintainers))
 
 	return 0
 
