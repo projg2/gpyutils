@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #	vim:fileencoding=utf-8
-# (c) 2017 Michał Górny <mgorny@gentoo.org>
+# (c) 2017-2020 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from distutils.core import setup, Command
@@ -33,7 +33,7 @@ class TestCommand(Command):
 
 setup(
 		name = 'gpyutils',
-		version = '0.4.3',
+		version = '0.4.4',
 		author = 'Michał Górny',
 		author_email = 'mgorny@gentoo.org',
 		url = 'https://github.com/mgorny/gpyutils',
