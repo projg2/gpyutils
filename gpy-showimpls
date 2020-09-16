@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #	vim:fileencoding=utf-8
-# (c) 2013 Michał Górny <mgorny@gentoo.org>
+# (c) 2013-2020 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from gentoopm import get_package_manager
@@ -59,13 +59,24 @@ def process(pkgs):
 			else:
 				keyw_tag = ' '
 
+			pmask_tag = ' '
+			version_color = ''
+			try:
+				if p.repo_masked:
+					pmask_tag = ANSI.red + 'M' + ANSI.reset
+					version_color = ANSI.red
+			except NotImplementedError:
+				pass
+
 			if p in redundant:
 				unused_tag = ANSI.purple + '#' + ANSI.reset
 			else:
 				unused_tag = ' '
 
-			print('%16s: %s %s %s %s' % (p.version, keyw_tag,
-				eclass_tag, unused_tag, ' '.join(output).rstrip()))
+			print('%s%16s%s: %s%s %s %s %s' % (
+				version_color, p.version, ANSI.reset,
+				keyw_tag, pmask_tag, eclass_tag, unused_tag,
+				' '.join(output).rstrip()))
 
 def main(prog_name, *argv):
 	if not argv:
