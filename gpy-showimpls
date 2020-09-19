@@ -32,33 +32,6 @@ def process(pkgs):
 		for p in pg:
 			output = [' ' * len(x) for x in keys]
 
-			ptype = guess_package_type(p, check_deps=False)
-			if ptype == PkgType.non_python:
-				continue
-
-			impls = get_python_impls(p)
-			for i in impls:
-				if i in my_impls:
-					output[keys.index(i.short_name)] = ('%s%s%s'
-						% (i.status.color, i.short_name, ANSI.reset))
-
-			if ptype == PkgType.python_r0:
-				eclass_tag = ANSI.gray + '*' + ANSI.reset
-			elif ptype.subtype == PkgSubType.python_single:
-				eclass_tag = ANSI.cyan + 's' + ANSI.reset
-			elif ptype.subtype == PkgSubType.python_any:
-				eclass_tag = ANSI.brown + 'a' + ANSI.reset
-			else:
-				eclass_tag = ' '
-
-			pclass = get_package_class(p)
-			if pclass == PackageClass.stable:
-				keyw_tag = ANSI.green + 'S' + ANSI.reset
-			elif pclass == PackageClass.testing:
-				keyw_tag = ANSI.brown + '~' + ANSI.reset
-			else:
-				keyw_tag = ' '
-
 			pmask_tag = ' '
 			version_color = ''
 			try:
@@ -68,10 +41,37 @@ def process(pkgs):
 			except NotImplementedError:
 				pass
 
+			pclass = get_package_class(p)
+			if pclass == PackageClass.stable:
+				keyw_tag = ANSI.green + 'S' + ANSI.reset
+			elif pclass == PackageClass.testing:
+				keyw_tag = ANSI.brown + '~' + ANSI.reset
+			else:
+				keyw_tag = ' '
+
 			if p in redundant:
 				unused_tag = ANSI.purple + '#' + ANSI.reset
 			else:
 				unused_tag = ' '
+
+			ptype = guess_package_type(p, check_deps=False)
+			if ptype == PkgType.non_python:
+				eclass_tag = '-'
+			else:
+				impls = get_python_impls(p)
+				for i in impls:
+					if i in my_impls:
+						output[keys.index(i.short_name)] = ('%s%s%s'
+							% (i.status.color, i.short_name, ANSI.reset))
+
+				if ptype == PkgType.python_r0:
+					eclass_tag = ANSI.gray + '*' + ANSI.reset
+				elif ptype.subtype == PkgSubType.python_single:
+					eclass_tag = ANSI.cyan + 's' + ANSI.reset
+				elif ptype.subtype == PkgSubType.python_any:
+					eclass_tag = ANSI.brown + 'a' + ANSI.reset
+				else:
+					eclass_tag = ' '
 
 			print('%s%16s%s: %s%s %s %s %s' % (
 				version_color, p.version, ANSI.reset,
