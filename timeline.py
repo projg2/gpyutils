@@ -150,6 +150,10 @@ def main():
                         bars.append(('~arch', vdata['testing']))
                     if 'stable' in vdata:
                         bars.append(('stable', vdata['stable']))
+                    if 'default' in vdata:
+                        bars.append(('default', vdata['default']))
+                    if 'old' in vdata:
+                        bars.append(('old', vdata['old']))
                     if 'removal' in vdata:
                         bars.append(('removal', vdata['removal']))
                     else:
