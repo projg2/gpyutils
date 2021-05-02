@@ -1,0 +1,193 @@
+[upstream."2.5"]
+alpha1 = 2006-04-05
+beta1 = 2006-06-20
+rc1 = 2006-08-17
+final = 2006-09-19
+last-bugfix = 2008-12-23
+last-bugfix-ver = "2.5.4"
+eol = 2011-05-26
+
+[upstream."2.6"]
+dev = 2006-08-18
+alpha1 = 2008-02-29
+beta1 = 2008-06-18
+rc1 = 2008-09-12
+final = 2009-10-01
+last-bugfix = 2010-08-24
+last-bugfix-ver = "2.6.6"
+eol = 2013-10-29
+
+[upstream."2.7"]
+dev = 2008-10-03
+alpha1 = 2009-12-05
+beta1 = 2010-04-03
+rc1 = 2010-06-05
+final = 2010-07-03
+last-bugfix = 2020-04-20
+last-bugfix-ver = "2.7.18"
+eol = 2020-04-20
+
+[upstream."3.0"]
+dev = 2006-03-30
+alpha1 = 2008-02-29
+beta1 = 2008-06-18
+rc1 = 2008-09-17
+final = 2008-12-03
+last-bugfix = 2009-02-13
+last-bugfix-ver = "3.0.1"
+eol = 2009-02-13
+
+[upstream."3.1"]
+dev = 2008-12-03
+alpha1 = 2009-03-07
+beta1 = 2009-05-06
+rc1 = 2009-05-30
+final = 2009-06-27
+last-bugfix = 2011-06-11
+last-bugfix-ver = "3.1.4"
+eol = 2012-04-09
+
+[upstream."3.2"]
+dev = 2009-06-27
+alpha1 = 2010-08-01
+beta1 = 2010-12-06
+rc1 = 2011-01-16
+final = 2011-02-20
+last-bugfix = 2013-05-13
+last-bugfix-ver = "3.2.5"
+eol = 2014-10-11
+
+[upstream."3.3"]
+dev = 2011-02-20
+alpha1 = 2012-03-05
+beta1 = 2012-06-27
+rc1 = 2012-08-24
+final = 2012-09-29
+last-bugfix = 2014-03-08
+last-bugfix-ver = "3.3.5"
+eol = 2017-09-29
+
+[upstream."3.4"]
+dev = 2012-09-29
+alpha1 = 2013-08-03
+beta1 = 2013-11-24
+rc1 = 2014-02-10
+final = 2014-03-16
+last-bugfix = 2015-12-21
+last-bugfix-ver = "3.4.4"
+eol = 2019-03-04
+
+[upstream."3.5"]
+dev = 2014-03-17
+alpha1 = 2015-02-08
+beta1 = 2015-05-24
+rc1 = 2015-08-10
+final = 2015-09-13
+last-bugfix = 2017-08-08
+last-bugfix-ver = "3.5.4"
+eol = 2020-09-05
+
+[upstream."3.6"]
+dev = 2015-05-24
+alpha1 = 2016-05-17
+beta1 = 2016-09-12
+rc1 = 2016-12-06
+final = 2016-12-23
+last-bugfix = 2018-12-24
+last-bugfix-ver = "3.6.8"
+eol = 2021-12-23
+
+[upstream."3.7"]
+dev = 2016-09-12
+alpha1 = 2017-09-19
+beta1 = 2018-01-31
+rc1 = 2018-06-12
+final = 2018-06-27
+last-bugfix = 2020-06-27
+last-bugfix-ver = "3.7.8"
+eol = 2023-06-27
+
+[upstream."3.8"]
+dev = 2018-01-29
+alpha1 = 2019-02-03
+beta1 = 2019-06-04
+rc1 = 2019-10-01
+final = 2019-10-14
+last-bugfix = 2021-05-03
+last-bugfix-ver = "3.8.10"
+eol = 2024-10-01
+
+[upstream."3.9"]
+dev = 2019-06-04
+alpha1 = 2019-11-19
+beta1 = 2020-05-18
+rc1 = 2020-08-11
+final = 2020-10-05
+last-bugfix = 2022-05-02
+last-bugfix-ver = "3.9.11"
+# eol = 2025-10-01
+
+[upstream."3.10"]
+dev = 2020-05-18
+alpha1 = 2020-10-05
+beta1 = 2021-05-03
+rc1 = 2021-08-02
+final = 2021-10-04
+last-bugfix = 2023-04-04  # approximate
+
+[package."2.7"]
+testing = 2010-07-04
+testing-ver = "2.7"
+stable = 2011-03-24
+stable-ver = "2.7.1-r1"
+
+[package."3.6"]
+testing = 2017-01-08
+testing-ver = "3.6.0"
+stable = 2017-12-01
+stable-ver = "3.6.3-r1"
+
+[package."3.7"]
+testing = 2018-07-06
+testing-ver = "3.7.0"
+stable = 2019-12-04
+stable-ver = "3.7.5-r1"
+
+[package."3.8"]
+testing = 2019-11-11
+testing-ver = "3.8.0"
+stable = 2020-04-22
+stable-ver = "3.8.2-r1"
+
+[package."3.9"]
+testing = 2020-01-05
+testing-ver = "3.9.0a2"
+stable = 2020-11-06
+stable-ver = "3.9.0"
+
+[package."3.10"]
+testing = 2020-10-05
+testing-ver = "3.10.0a1"
+
+[target."2.7"]
+python-eclass = 2010-07-04
+stable = 2012-03-25
+removal = 2021-01-31
+
+[target."3.6"]
+testing = 2017-01-25
+stable = 2017-12-02
+removal = 2021-01-15
+
+[target."3.7"]
+testing = 2018-07-06
+stable = 2019-12-04
+removal = 2021-06-01
+
+[target."3.8"]
+testing = 2019-11-12
+stable = 2020-07-05
+
+[target."3.9"]
+testing = 2020-05-25
+stable = 2020-11-09
