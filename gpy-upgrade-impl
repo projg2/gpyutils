@@ -47,7 +47,7 @@ def process_one(p, repo, old, new, printer, fix=False, stabilizations=False,
         # not a Python package
         return None
 
-    if eclass_filter is not None and not p.inherits.union(eclass_filter):
+    if eclass_filter is not None and not p.inherits.intersection(eclass_filter):
         return
 
     if stabilizations and new in impls:
