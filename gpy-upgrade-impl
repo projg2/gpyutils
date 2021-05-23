@@ -40,11 +40,15 @@ def print_package(p, pkg_print, maintainers=False):
     print(out)
 
 
-def process_one(p, repo, old, new, printer, fix=False, stabilizations=False):
+def process_one(p, repo, old, new, printer, fix=False, stabilizations=False,
+                eclass_filter=None):
     impls = get_python_impls(p)
     if impls is None:
         # not a Python package
         return None
+
+    if eclass_filter is not None and not p.inherits.union(eclass_filter):
+        return
 
     if stabilizations and new in impls:
         # check if new is supported in stable
@@ -138,7 +142,7 @@ def process_pkg_deps(repo, p, f, package_cache):
 
 
 def process(repo, pkgs, old, new, printer, fix=False, stabilizations=False, deps=False,
-        package_cache=None):
+        package_cache=None, eclass_filter=None):
     total_upd = 0
     total_pkg = 0
 
@@ -152,8 +156,11 @@ def process(repo, pkgs, old, new, printer, fix=False, stabilizations=False, deps
                     ANSI.white, total_pkg, ANSI.reset))
 
         p = pg[-1]
-        r = process_one(p, repo, old, new, printer=printer,
-                fix=fix, stabilizations=stabilizations)
+        r = process_one(p, repo, old, new,
+                        printer=printer,
+                        fix=fix,
+                        stabilizations=stabilizations,
+                        eclass_filter=eclass_filter)
 
         if r is None:
             continue
@@ -179,6 +186,8 @@ def main(prog_name, *argv):
             help='Find stabilization candidates needed for <new-impl> support')
     opt.add_argument('-d', '--depends', action='store_true',
             help='Include the dependencies of specified packages')
+    opt.add_argument('-e', '--eclass-filter',
+            help='Include only ebuild using specified eclass(es)')
     opt.add_argument('-m', '--maintainers', action='store_true',
             help='Print maintainers of listed packages')
     opt.add_argument('-p', '--print-path', action='store_const',
@@ -208,9 +217,14 @@ def main(prog_name, *argv):
         sys.stderr.write('%s[warning: new-impl is not supported by python.eclass\n python.eclass packages will be omitted]%s\n'
                 % (ANSI.brown, ANSI.reset))
 
+    eclass_filter = None
+    if vals.eclass_filter:
+        eclass_filter = vals.eclass_filter.split(',')
+
     if not vals.package:
         process(pm.repositories[vals.repo], pm.repositories[vals.repo],
                 old, new, fix=vals.fix, stabilizations=vals.stabilizations,
+                eclass_filter=eclass_filter,
                 printer=lambda p: print_package(p,
                                                 maintainers=vals.maintainers,
                                                 pkg_print=vals.pkg_print))
@@ -221,6 +235,7 @@ def main(prog_name, *argv):
                 pm.repositories[vals.repo].filter(pkg), old, new,
                 fix=vals.fix, stabilizations=vals.stabilizations,
                 package_cache=package_cache, deps=vals.depends,
+                eclass_filter=eclass_filter,
                 printer=lambda p: print_package(p,
                                                 maintainers=vals.maintainers,
                                                 pkg_print=vals.pkg_print))
