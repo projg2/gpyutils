@@ -15,6 +15,7 @@ from gpyutils.pycompat import EbuildMangler
 
 import argparse
 import functools
+import os.path
 import re
 import sys
 
@@ -27,11 +28,11 @@ def obfuscate_email(email):
     return email.replace('@', '[at]')
 
 
-def print_package(p, maintainers=False):
+def print_package(p, pkg_print, maintainers=False):
     # in case stdout & stderr goes to the same console,
     # clean up the line before printing
     sys.stderr.write('%s\r' % ANSI.clear_line)
-    out = str(p.slotted_atom)
+    out = str(pkg_print(p))
     if maintainers:
         out += ' ['
         out += ' '.join(obfuscate_email(m.email) for m in p.maintainers)
@@ -180,7 +181,11 @@ def main(prog_name, *argv):
             help='Include the dependencies of specified packages')
     opt.add_argument('-m', '--maintainers', action='store_true',
             help='Print maintainers of listed packages')
-    opt.add_argument('-r', '--repo', default='gentoo',
+    opt.add_argument('-p', '--print-path', action='store_const',
+            dest='pkg_print',
+            const=lambda p: os.path.sep.join(p.path.split(os.path.sep)[-3:]),
+            help='Print relative path to the ebuild')
+    opt.add_argument('-r', '--repo',
             help='Work on given repository (default: gentoo)')
     opt.add_argument('old', metavar='old-impl',
             help='Old implementation')
@@ -188,6 +193,10 @@ def main(prog_name, *argv):
             help='New implementation')
     opt.add_argument('package', nargs='*',
             help='Packages to scan (whole repo if none provided')
+    opt.set_defaults(
+       repo='gentoo',
+       pkg_print=lambda p: p.slotted_atom)
+
     vals = opt.parse_args(list(argv))
 
     read_implementations(pm)
@@ -202,7 +211,9 @@ def main(prog_name, *argv):
     if not vals.package:
         process(pm.repositories[vals.repo], pm.repositories[vals.repo],
                 old, new, fix=vals.fix, stabilizations=vals.stabilizations,
-                printer=lambda p: print_package(p, maintainers=vals.maintainers))
+                printer=lambda p: print_package(p,
+                                                maintainers=vals.maintainers,
+                                                pkg_print=vals.pkg_print))
     else:
         package_cache = set()
         for pkg in vals.package:
@@ -210,7 +221,9 @@ def main(prog_name, *argv):
                 pm.repositories[vals.repo].filter(pkg), old, new,
                 fix=vals.fix, stabilizations=vals.stabilizations,
                 package_cache=package_cache, deps=vals.depends,
-                printer=lambda p: print_package(p, maintainers=vals.maintainers))
+                printer=lambda p: print_package(p,
+                                                maintainers=vals.maintainers,
+                                                pkg_print=vals.pkg_print))
 
     return 0
 
