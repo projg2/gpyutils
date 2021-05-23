@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#	vim:fileencoding=utf-8
+#   vim:fileencoding=utf-8
 # (c) 2017 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
@@ -14,46 +14,46 @@ import optparse, sys
 pm = get_package_manager()
 
 def process(pkgs):
-	sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
-			% (ANSI.clear_line, ANSI.brown, ANSI.reset))
+    sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
+            % (ANSI.clear_line, ANSI.brown, ANSI.reset))
 
-	count_old = 0
-	count_all = 0
+    count_old = 0
+    count_all = 0
 
-	for pg in group_packages(pkgs):
-		p = pg[-1]
-		sys.stderr.write('%s%s%-56s%s (%s%4d%s of %s%4d%s need converting)\r'
-				% (ANSI.clear_line, ANSI.green, p, ANSI.reset,
-					ANSI.white, count_old, ANSI.reset,
-					ANSI.white, count_all, ANSI.reset))
+    for pg in group_packages(pkgs):
+        p = pg[-1]
+        sys.stderr.write('%s%s%-56s%s (%s%4d%s of %s%4d%s need converting)\r'
+                % (ANSI.clear_line, ANSI.green, p, ANSI.reset,
+                    ANSI.white, count_old, ANSI.reset,
+                    ANSI.white, count_all, ANSI.reset))
 
-		t = guess_package_type(p, check_deps=True)
-		if isinstance(t, PkgType.non_python):
-			continue
+        t = guess_package_type(p, check_deps=True)
+        if isinstance(t, PkgType.non_python):
+            continue
 
-		count_all += 1
+        count_all += 1
 
-		if isinstance(t, PkgType.python_r0):
-			count_old += 1
+        if isinstance(t, PkgType.python_r0):
+            count_old += 1
 
-			# in case stdout & stderr goes to the same console,
-			# clean up the line before printing
-			sys.stderr.write('%s\r' % ANSI.clear_line)
+            # in case stdout & stderr goes to the same console,
+            # clean up the line before printing
+            sys.stderr.write('%s\r' % ANSI.clear_line)
 
-			print('%s [%s -> %s]' % (p, t.subtype.eclass_r0, t.subtype.eclass_r1))
+            print('%s [%s -> %s]' % (p, t.subtype.eclass_r0, t.subtype.eclass_r1))
 
-	sys.stderr.write('%s%sDone.%s\n'
-			% (ANSI.clear_line, ANSI.white, ANSI.reset))
+    sys.stderr.write('%s%sDone.%s\n'
+            % (ANSI.clear_line, ANSI.white, ANSI.reset))
 
 def main(prog_name, *argv):
-	opt = optparse.OptionParser(prog = prog_name)
-	opt.add_option('-r', '--repo',
-			dest='repo', default='gentoo',
-			help='Work on given repository (default: gentoo)')
-	vals, argv = opt.parse_args(list(argv))
+    opt = optparse.OptionParser(prog = prog_name)
+    opt.add_option('-r', '--repo',
+            dest='repo', default='gentoo',
+            help='Work on given repository (default: gentoo)')
+    vals, argv = opt.parse_args(list(argv))
 
-	process(pm.repositories[vals.repo])
-	return 0
+    process(pm.repositories[vals.repo])
+    return 0
 
 if __name__ == '__main__':
-	sys.exit(main(*sys.argv))
+    sys.exit(main(*sys.argv))
