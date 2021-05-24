@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+#   vim:fileencoding=utf-8
+# (c) 2013-2021 Michał Górny <mgorny@gentoo.org>
+# Released under the terms of the 2-clause BSD license.
+
+from gentoopm import get_package_manager
+
+from gpyutils.implementations import (get_python_impls,
+                                      read_implementations)
+from gpyutils.packages import (get_package_class, group_packages,
+                               PackageClass)
+
+import sys
+
+
+pm = get_package_manager()
+read_implementations(pm)
+
+
+def process(pkgs):
+    key = 'slotted_atom'
+    for pg in group_packages(pkgs.sorted, key):
+        kw_impls = []
+        st_impls = []
+
+        for p in reversed(pg):
+            # if the newest version does not use python, stop here
+            impls = get_python_impls(p)
+            if impls is None:
+                break
+
+            # otherwise, try to find keywords of the newest version
+            # with stable and ~arch keyword
+            cl = get_package_class(p)
+            if not kw_impls:
+                if not cl == PackageClass.non_keyworded:
+                    kw_impls = [x.short_name for x in impls]
+            if not st_impls:
+                if cl == PackageClass.stable:
+                    st_impls = [x.short_name for x in impls]
+            if kw_impls and st_impls:
+                break
+
+        # if no impls found, the package is either non-python
+        # or unkeyworded
+        if not kw_impls and not st_impls:
+            continue
+
+        out = ['{:<40}'.format(str(getattr(p, key)))]
+        if st_impls:
+            out.append('STABLE:')
+            out.extend(st_impls)
+
+        # print only extra impls
+        for impl in list(kw_impls):
+            if impl in st_impls:
+                kw_impls.remove(impl)
+
+        if kw_impls:
+            out.append(' ~ARCH:')
+            out.extend(kw_impls)
+
+        print(' '.join(out))
+
+
+def main():
+    process(pm.repositories['gentoo'])
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
