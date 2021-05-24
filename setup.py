@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #	vim:fileencoding=utf-8
-# (c) 2017-2020 Michał Górny <mgorny@gentoo.org>
+# (c) 2017-2021 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from distutils.core import setup, Command
@@ -45,6 +45,7 @@ setup(
 			'gpy-depgraph',
 			'gpy-drop-dead-impls',
 			'gpy-impl',
+			'gpy-list-pkg-impls',
 			'gpy-py2',
 			'gpy-showimpls',
 			'gpy-upgrade-impl',
