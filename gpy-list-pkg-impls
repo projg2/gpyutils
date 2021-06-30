@@ -22,6 +22,7 @@ def process(pkgs):
     for pg in group_packages(pkgs.sorted, key):
         kw_impls = []
         st_impls = []
+        eapi = None
 
         for p in reversed(pg):
             # if the newest version does not use python, stop here
@@ -32,6 +33,8 @@ def process(pkgs):
             # otherwise, try to find keywords of the newest version
             # with stable and ~arch keyword
             cl = get_package_class(p)
+            if eapi is None:
+                eapi = p.eapi
             if not kw_impls:
                 if not cl == PackageClass.non_keyworded:
                     kw_impls = [x.short_name for x in impls]
@@ -47,8 +50,11 @@ def process(pkgs):
             continue
 
         out = ['{:<40}'.format(str(getattr(p, key)))]
+        out.append('EAPI:')
+        out.append(eapi)
+
         if st_impls:
-            out.append('STABLE:')
+            out.append(' STABLE:')
             out.extend(st_impls)
 
         # print only extra impls
@@ -57,7 +63,7 @@ def process(pkgs):
                 kw_impls.remove(impl)
 
         if kw_impls:
-            out.append(' ~ARCH:')
+            out.append('  ~ARCH:')
             out.extend(kw_impls)
 
         print(' '.join(out))
