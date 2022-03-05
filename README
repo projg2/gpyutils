@@ -59,28 +59,6 @@ can also modify ebuilds.
 The scan can be done per-repository or per-package.
 
 
-gpy-find-missing-meta
----------------------
-
-gpy-find-missing-meta scans the repository for common mistakes in -r1
-packages. The issues found include:
-
-- PYTHON_COMPAT declared in eclass,
-
-- missing PYTHON_REQUIRED_USE in REQUIRED_USE,
-
-- missing PYTHON_DEPS in (R)DEPEND,
-
-- PYTHON_DEPS used in RDEPEND w/ python-any-r1.
-
-It could be possibly amended with additional checks in the future.
-
-The output consists of the -r1 package followed by a message explaining
-the issue.
-
-The scan can done per-repository or per-package.
-
-
 gpy-impl
 --------
 
