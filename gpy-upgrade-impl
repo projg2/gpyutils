@@ -201,7 +201,7 @@ def main(prog_name, *argv):
     opt.add_argument('new', metavar='new-impl',
             help='New implementation')
     opt.add_argument('package', nargs='*',
-            help='Packages to scan (whole repo if none provided')
+            help='Packages to scan (whole repo if none provided)')
     opt.set_defaults(
        repo='gentoo',
        pkg_print=lambda p: p.slotted_atom)
