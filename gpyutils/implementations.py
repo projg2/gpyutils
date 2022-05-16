@@ -118,7 +118,7 @@ class PythonR0Impls(PythonImpls):
                 for r in self._restrict)
 
 def get_python_impls(pkg, need_dead=False):
-    t = guess_package_type(pkg, check_deps=False)
+    t = guess_package_type(pkg)
 
     if isinstance(t, PkgType.python_r1):
         return PythonR1Impls(pkg, t.subtype, need_dead=need_dead)

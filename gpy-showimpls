@@ -54,7 +54,7 @@ def process(pkgs):
             else:
                 unused_tag = ' '
 
-            ptype = guess_package_type(p, check_deps=False)
+            ptype = guess_package_type(p)
             if ptype == PkgType.non_python:
                 eclass_tag = '-'
             else:

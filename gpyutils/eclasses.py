@@ -1,23 +1,11 @@
 #   vim:fileencoding=utf-8
-# (c) 2017 Michał Górny <mgorny@gentoo.org>
+# (c) 2017-2022 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from .util import EnumObj
 
 from gentoopm.basepm.atom import PMAtom
 
-def has_python_in_deptree(dep):
-    """ Check whether dev-lang/python is in dependency tree. """
-
-    for d in dep:
-        if isinstance(d, PMAtom):
-            if d.key == 'dev-lang/python':
-                return True
-        else:
-            if has_python_in_deptree(d):
-                return True
-
-    return False
 
 class PkgSubType(object):
     """ Package sub-type. """
@@ -43,6 +31,7 @@ class PkgSubType(object):
         eclass_r0 = '(none)'
 
     all_subtypes = (python, python_single, python_rdep, python_any)
+
 
 class PkgType(object):
     """ Guess package type from inherited eclasses. """
@@ -75,7 +64,8 @@ class PkgType(object):
         def __init__(self, subtype):
             self.subtype = subtype
 
-def guess_package_type(pkg, check_deps=True):
+
+def guess_package_type(pkg):
     # first check for -r1
     # it's easy since every subtype can be recognized using inherit
     for s in PkgSubType.all_subtypes:
@@ -86,13 +76,4 @@ def guess_package_type(pkg, check_deps=True):
         # subtype check involves running bash
         # so better keep it lazy
         return PkgType.python_r0(pkg, lazy=True)
-    elif check_deps:
-        if (has_python_in_deptree(pkg.run_dependencies)
-                or has_python_in_deptree(pkg.post_dependencies)):
-            return PkgType.python_r0(PkgSubType.python_rdep)
-        if has_python_in_deptree(pkg.build_dependencies):
-            return PkgType.python_r0(PkgSubType.python_any)
-        if hasattr(pkg, 'cbuild_build_dependencies'):
-            if has_python_in_deptree(pkg.cbuild_build_dependencies):
-                return PkgType.python_r0(PkgSubType.python_any)
     return PkgType.non_python()
