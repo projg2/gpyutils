@@ -7,7 +7,6 @@ from gentoopm import get_package_manager
 from gentoopm.basepm.atom import PMAtom
 
 from gpyutils.ansi import ANSI
-from gpyutils.eclasses import guess_package_type, PkgType
 from gpyutils.implementations import (get_python_impls, get_impl_by_name,
         read_implementations)
 from gpyutils.packages import get_package_class, group_packages, PackageClass
@@ -73,8 +72,7 @@ def process_one(p, repo, old, new, printer, fix=False, stabilizations=False,
         if new not in impls:
             printer(p)
 
-            if fix and isinstance(guess_package_type(p),
-                    PkgType.python_r1):
+            if fix:
                 upd_list = []
 
                 for p in sorted(repo.filter(p.key), reverse=True):
