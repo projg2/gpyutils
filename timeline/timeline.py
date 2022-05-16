@@ -110,7 +110,6 @@ def main():
                      ('β', vdata['beta1']),
                      ('rc', vdata['rc1']),
                      ('stable', vdata['final'])])
-                any_final = False
                 if 'last-bugfix' in vdata:
                     bars.append(('security', vdata['last-bugfix']))
                 if 'eol' in vdata and vdata['eol'] != vdata['last-bugfix']:

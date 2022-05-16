@@ -9,9 +9,7 @@ from gpyutils.ansi import ANSI
 from gpyutils.packages import group_packages
 
 import argparse
-import functools
 import os.path
-import re
 import sys
 
 import lxml.etree
@@ -81,7 +79,6 @@ def main(prog_name, *argv):
         process(pm.repositories[vals.repo],
                 pm.repositories[vals.repo])
     else:
-        package_cache = set()
         for pkg in vals.package:
             process(pm.repositories[vals.repo],
                     pm.repositories[vals.repo].filter(pkg))

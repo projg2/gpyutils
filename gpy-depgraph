@@ -5,7 +5,6 @@
 
 from gentoopm import get_package_manager
 from gentoopm.basepm.atom import PMAtom
-from gentoopm.exceptions import EmptyPackageSetError
 
 from gpyutils.ansi import ANSI
 

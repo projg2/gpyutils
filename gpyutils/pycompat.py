@@ -36,9 +36,9 @@ class Value(object):
         return self.local_name
 
 
-def get_previous_val_index(l, v):
+def get_previous_val_index(values, v):
     """
-    Return index of value in list l that lexically precedes v,
+    Return index of value in list values that lexically precedes v,
     or -1 if no value precedes it.
 
     >>> get_previous_val_index([Value('a'), Value('b')], Value('c'))
@@ -49,7 +49,8 @@ def get_previous_val_index(l, v):
     1
     >>> get_previous_val_index([Value('c'), Value('b')], Value('a'))
     -1
-    >>> get_previous_val_index([Value('b'), Whitespace(' '), Value('c')], Value('a'))
+    >>> get_previous_val_index([Value('b'), Whitespace(' '), Value('c')],
+    ...                        Value('a'))
     -1
     """
     def sort_key(x):
@@ -61,12 +62,12 @@ def get_previous_val_index(l, v):
         else:
             return (0, x.local_prefix)
 
-    sorted_values = sorted(l + [v], key=sort_key)
+    sorted_values = sorted(values + [v], key=sort_key)
     idx = sorted_values.index(v)
     if idx == 0:
         return -1
     else:
-        return l.index(sorted_values[idx-1])
+        return values.index(sorted_values[idx-1])
 
 
 class Group(object):
@@ -114,8 +115,8 @@ class Range(Group):
         if m is None:
             raise ValueError("Invalid range: %s" % values[0].local_name)
         Group.__init__(self, f_prefix, l_prefix,
-                [Value(''.join((f_prefix, str(x))), str(x))
-                    for x in range(int(m.group(1)), int(m.group(2))+1)])
+                       [Value(''.join((f_prefix, str(x))), str(x))
+                        for x in range(int(m.group(1)), int(m.group(2))+1)])
 
     def __repr__(self):
         return 'Range(full_prefix=%s, local_prefix=%s, values=%s)' % (
@@ -164,7 +165,7 @@ class PythonCompat(object):
                 continue
             # don't split mid-version if maintainer didn't do that already
             mid_ver_groups = [x for x in self.groups
-                if x.local_prefix.endswith('_')]
+                              if x.local_prefix.endswith('_')]
             if cpfx[-1] == '_' and not any(mid_ver_groups):
                 continue
 
@@ -181,7 +182,8 @@ class PythonCompat(object):
             # one already but didn't (so he likely doesn't want that)
             # e.g. if he has 'python2_5 python2_6', don't do '{2_6,2_7}'
             group_candidates = [x for x in self.nodes
-                if isinstance(x, Value) and x.full_name.startswith(cpfx)]
+                                if isinstance(x, Value)
+                                and x.full_name.startswith(cpfx)]
             if len(group_candidates) > 1:
                 continue
 
@@ -190,7 +192,7 @@ class PythonCompat(object):
 
             i = self.nodes.index(v)
             self.nodes[i] = Group(cpfx, cpfx,
-                    sorted([v1, v2], key=lambda x: x.local_name))
+                                  sorted([v1, v2], key=lambda x: x.local_name))
             return
 
         # add it (sorted!)
@@ -253,9 +255,7 @@ class PythonCompat(object):
 def parse_item(s):
     depth = 0
     curr = ['']
-    items = []
     values = [[]]
-    out = []
     had_text = []
 
     def commit_value():
@@ -307,6 +307,7 @@ def parse_item(s):
 
 
 ws_split_re = re.compile(r'(\s+)')
+
 
 def parse(s):
     out = PythonCompat()
@@ -403,7 +404,8 @@ def del_impl(s, old):
     ' python2_6 '
     >>> del_impl(' python2_6 python2_7 python3_2 ', 'python2_7')
     ' python2_6 python3_2 '
-    >>> del_impl(' python{2_{5,6,7},3_{1,2,3}} pypy{1_{8,9},2_0} ', 'python2_5')
+    >>> del_impl(' python{2_{5,6,7},3_{1,2,3}} pypy{1_{8,9},2_0} ',
+    ...          'python2_5')
     ' python{2_{6,7},3_{1,2,3}} pypy{1_{8,9},2_0} '
     >>> del_impl(' python{2_{5,6,7},3_{1,2,3}} pypy{1_{8,9},2_0} ', 'pypy1_8')
     ' python{2_{5,6,7},3_{1,2,3}} pypy{1_9,2_0} '
@@ -437,6 +439,7 @@ def del_impl(s, old):
 
 python_compat_re = re.compile(r'(?<![^\n])PYTHON_COMPAT=\((?P<value>.*)\)')
 
+
 class EbuildMangler(object):
     def __init__(self, path):
         with open(path, 'rb') as f:
@@ -454,11 +457,11 @@ class EbuildMangler(object):
 
     def write(self):
         data = ''.join((self._data[:self._start],
-            'PYTHON_COMPAT=(', str(self._value), ')',
-            self._data[self._end:]))
+                        'PYTHON_COMPAT=(', str(self._value), ')',
+                        self._data[self._end:]))
 
-        with tempfile.NamedTemporaryFile('wb',
-                dir=os.path.dirname(self._path), delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+                'wb', dir=os.path.dirname(self._path), delete=False) as f:
             tmp_path = f.name
             f.write(data.encode('utf8'))
 

@@ -2,11 +2,12 @@
 # (c) 2013-2022 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
-from .ansi import ANSI
 from .eclasses import guess_package_type, PkgType
 
-import codecs, csv, fnmatch, os.path
+import codecs
+import csv
 import enum
+import os.path
 
 
 class Status(enum.Enum):
@@ -19,7 +20,7 @@ class Status(enum.Enum):
 
 
 class PythonImpl(object):
-    def __init__(self, r1_name, r0_name, status, short_name = None):
+    def __init__(self, r1_name, r0_name, status, short_name=None):
         self.r1_name = r1_name
         self.short_name = short_name
         self.status = Status[status]
@@ -33,21 +34,23 @@ def read_implementations(pkg_db):
     # respecting PM ordering
     for r in reversed(list(pkg_db.repositories)):
         path = os.path.join(r.path, 'app-portage', 'gpyutils',
-                'files', 'implementations.txt')
+                            'files', 'implementations.txt')
         if os.path.exists(path):
             with codecs.open(path, 'r', 'utf8') as f:
                 listr = csv.reader(f, delimiter='\t',
-                        lineterminator='\n', strict=True)
-                for l in listr:
+                                   lineterminator='\n', strict=True)
+                for x in listr:
                     # skip comment and empty lines
-                    if not l or l[0].startswith('#'):
+                    if not x or x[0].startswith('#'):
                         continue
-                    if len(l) != 4:
-                        raise SystemError('Syntax error in implementations.txt')
-                    implementations.append(PythonImpl(*l))
+                    if len(x) != 4:
+                        raise SystemError(
+                            'Syntax error in implementations.txt')
+                    implementations.append(PythonImpl(*x))
                 break
     else:
-        raise SystemError('Unable to find implementations.txt in any of ebuild repositories')
+        raise SystemError(
+            'Unable to find implementations.txt in any of ebuild repositories')
 
 
 def get_impl_by_name(name):
@@ -64,11 +67,11 @@ class PythonImpls:
             if subtype == PkgType.python_single:
                 # len("python_single_target_") == 21
                 self._impls = [x[21:] for x in pkg.use
-                        if x.startswith('python_single_target_')]
-            else: # python_r1
+                               if x.startswith('python_single_target_')]
+            else:  # python_r1
                 # len("python_targets_") == 15
                 self._impls = [x[15:] for x in pkg.use
-                        if x.startswith('python_targets_')]
+                               if x.startswith('python_targets_')]
         else:
             self._impls = pkg.environ['PYTHON_COMPAT[*]'].split()
 
