@@ -21,7 +21,6 @@ setup(
 			'gpy-list-pkg-impls',
 			'gpy-showimpls',
 			'gpy-upgrade-impl',
-			'gpy-verify-installed-reqs',
 		],
 
 		classifiers = [
