@@ -4,48 +4,25 @@
 
 from .ansi import ANSI
 from .eclasses import guess_package_type, PkgType
-from .util import EnumObj
 
 import codecs, csv, fnmatch, os.path
+import enum
 
 
-class Status(object):
-    class dead(EnumObj(1)):
-        pass
-
-    class old(EnumObj(2)):
-        pass
-
-    class supported(EnumObj(3)):
-        pass
-
-    class current(EnumObj(4)):
-        pass
-
-    class experimental(EnumObj(5)):
-        pass
-
-    class future(EnumObj(6)):
-        pass
-
-    mapping = {
-        'dead': dead,
-        'old': old,
-        'supported': supported,
-        'current': current,
-        'experimental': experimental,
-        'future': future,
-    }
+class Status(enum.Enum):
+    dead = enum.auto()
+    old = enum.auto()
+    supported = enum.auto()
+    current = enum.auto()
+    experimental = enum.auto()
+    future = enum.auto()
 
 
 class PythonImpl(object):
     def __init__(self, r1_name, r0_name, status, short_name = None):
         self.r1_name = r1_name
         self.short_name = short_name
-        if status in Status.mapping:
-            self.status = Status.mapping[status]
-        else:
-            raise KeyError("Invalid implementation status: %s" % status)
+        self.status = Status[status]
 
 
 implementations = []
