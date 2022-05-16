@@ -6,8 +6,7 @@
 from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
-from gpyutils.implementations import (get_impl_by_name,
-        read_implementations)
+from gpyutils.implementations import get_impl_by_name, read_implementations
 from gpyutils.pycompat import EbuildMangler
 
 import sys

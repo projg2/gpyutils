@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #   vim:fileencoding=utf-8
-# (c) 2017 Michał Górny <mgorny@gentoo.org>
+# (c) 2017-2022 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from gentoopm import get_package_manager
@@ -135,18 +135,18 @@ class MaintainerMarker(object):
 
 def process(pkgsrc, pkgs, processor, marker):
     sys.stderr.write('%sPopulating match cache...%s\n'
-            % (ANSI.cyan, ANSI.reset))
+                     % (ANSI.cyan, ANSI.reset))
 
     for i, p in enumerate(pkgs):
         sys.stderr.write('%s%s%-56s%s (%s%4d%s/%s%4d%s done)\r'
-                % (ANSI.clear_line, ANSI.green, p, ANSI.reset,
-                    ANSI.white, i, ANSI.reset,
-                    ANSI.white, len(pkgs), ANSI.reset))
+                         % (ANSI.clear_line, ANSI.green, p, ANSI.reset,
+                            ANSI.white, i, ANSI.reset,
+                            ANSI.white, len(pkgs), ANSI.reset))
 
         pkgsrc.cache(p)
 
     sys.stderr.write('%s%sGenerating the graph...%s\n'
-            % (ANSI.clear_line, ANSI.cyan, ANSI.reset))
+                     % (ANSI.clear_line, ANSI.cyan, ANSI.reset))
     processor.start()
 
     # list all packages first, so we do not skip packages with no deps
@@ -155,9 +155,9 @@ def process(pkgsrc, pkgs, processor, marker):
 
     for i, p in enumerate(pkgs):
         sys.stderr.write('%s%s%-56s%s (%s%4d%s/%s%4d%s done)\r'
-                % (ANSI.clear_line, ANSI.green, p, ANSI.reset,
-                    ANSI.white, i, ANSI.reset,
-                    ANSI.white, len(pkgs), ANSI.reset))
+                         % (ANSI.clear_line, ANSI.green, p, ANSI.reset,
+                            ANSI.white, i, ANSI.reset,
+                            ANSI.white, len(pkgs), ANSI.reset))
         dep_sets = tuple(pkgsrc.get_dep_sets(p))
 
         combined = set()
@@ -176,29 +176,32 @@ def process(pkgsrc, pkgs, processor, marker):
             processor.add_edge(p, dep, dep_type)
 
     sys.stderr.write('%s%sDone.%s\n'
-            % (ANSI.clear_line, ANSI.white, ANSI.reset))
+                     % (ANSI.clear_line, ANSI.white, ANSI.reset))
     processor.finish()
 
 
 def main(prog_name, *argv):
-    opt = argparse.ArgumentParser(prog = prog_name)
+    opt = argparse.ArgumentParser(prog=prog_name)
     action = opt.add_mutually_exclusive_group()
     action.add_argument('-d', '--dot-print',
-            dest='proc_cls', action='store_const',
-            const=DotPrinter(), default=DotPrinter(),
-            help='Output a .dot graph (default)')
+                        dest='proc_cls', action='store_const',
+                        const=DotPrinter(), default=DotPrinter(),
+                        help='Output a .dot graph (default)')
     action.add_argument('-D', '--dependencies', metavar='PACKAGE',
-            help='Print list of all dependencies of given PACKAGE (uses networkx)')
+                        help='Print list of all dependencies of given PACKAGE '
+                             '(uses networkx)')
     action.add_argument('-n', '--node-dfs',
-            dest='proc_cls', action='store_const',
-            const=NXNodeDFS(),
-            help='Produce list of nodes in depth-first-search (uses networkx)')
+                        dest='proc_cls', action='store_const',
+                        const=NXNodeDFS(),
+                        help='Produce list of nodes in depth-first-search '
+                             '(uses networkx)')
     opt.add_argument('-m', '--mark-maintainer',
-            dest='mark_maint', action='append', default=[],
-            help='Highlight packages maintained by specified person/project (by e-mail)')
+                     dest='mark_maint', action='append', default=[],
+                     help='Highlight packages maintained by specified '
+                          'person/project (by e-mail)')
     opt.add_argument('-r', '--repo',
-            dest='repo', default='gentoo',
-            help='Work on given repository (default: gentoo)')
+                     dest='repo', default='gentoo',
+                     help='Work on given repository (default: gentoo)')
     opt.add_argument('file', nargs='*')
     vals = opt.parse_args(list(argv))
 
@@ -210,12 +213,12 @@ def main(prog_name, *argv):
     if vals.file:
         for fn in vals.file:
             with open(fn) as f:
-                for l in f:
-                    all_packages.add(l.strip())
+                for x in f:
+                    all_packages.add(x.strip())
     else:
         sys.stderr.write('[reading package dependency spec list from stdin]')
-        for l in sys.stdin:
-            all_packages.add(l.strip())
+        for x in sys.stdin:
+            all_packages.add(x.strip())
 
     pkgsrc = PackageSource(vals.repo)
     process(pkgsrc, all_packages, vals.proc_cls,

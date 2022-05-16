@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #   vim:fileencoding=utf-8
-# (c) 2013-2021 Michał Górny <mgorny@gentoo.org>
+# (c) 2013-2022 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from gentoopm import get_package_manager
@@ -55,8 +55,8 @@ def process(pkgs):
 
         pep517 = "        "
         with open(p.path) as f:
-            for l in f:
-                if l.startswith('DISTUTILS_USE_PEP517='):
+            for x in f:
+                if x.startswith('DISTUTILS_USE_PEP517='):
                     pep517 = "(PEP517)"
         out.append(pep517)
 

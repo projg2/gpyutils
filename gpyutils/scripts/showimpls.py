@@ -8,9 +8,15 @@ from gentoopm import get_package_manager
 from gpyutils.ansi import ANSI
 from gpyutils.eclasses import guess_package_type, PkgType
 from gpyutils.implementations import (implementations,
-        get_python_impls, read_implementations, Status)
-from gpyutils.packages import (find_redundant, get_package_class,
-        group_packages, PackageClass)
+                                      get_python_impls,
+                                      read_implementations,
+                                      Status,
+                                      )
+from gpyutils.packages import (find_redundant,
+                               get_package_class,
+                               group_packages,
+                               PackageClass,
+                               )
 
 import sys
 
@@ -20,7 +26,7 @@ read_implementations(pm)
 
 # omit dead impls since they get ignored anyway
 my_impls = [i for i in implementations
-        if i.status not in (Status.dead, Status.future)]
+            if i.status not in (Status.dead, Status.future)]
 keys = [i.short_name for i in my_impls]
 
 colors = {
@@ -72,8 +78,8 @@ def process(pkgs):
                 impls = get_python_impls(p)
                 for i in impls:
                     if i in my_impls:
-                        output[keys.index(i.short_name)] = ('%s%s%s'
-                            % (colors[i.status], i.short_name, ANSI.reset))
+                        output[keys.index(i.short_name)] = ''.join(
+                            (colors[i.status], i.short_name, ANSI.reset))
 
                 if ptype == PkgType.python_single:
                     eclass_tag = ANSI.cyan + 's' + ANSI.reset

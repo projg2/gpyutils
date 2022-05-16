@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #   vim:fileencoding=utf-8
-# (c) 2013-2020 Michał Górny <mgorny@gentoo.org>
+# (c) 2013-2022 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from gentoopm import get_package_manager
@@ -9,11 +9,15 @@ import gentoopm.exceptions
 from gpyutils.ansi import ANSI
 from gpyutils.eclasses import guess_package_type
 from gpyutils.implementations import (get_python_impls,
-        implementations, read_implementations, Status)
+                                      implementations,
+                                      read_implementations,
+                                      Status,
+                                      )
 from gpyutils.packages import group_packages
 from gpyutils.pycompat import EbuildMangler
 
-import optparse, sys
+import optparse
+import sys
 
 
 pm = get_package_manager()
@@ -26,13 +30,13 @@ def process(pkgs, fix=False):
     total_pkg = 0
 
     sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
-            % (ANSI.clear_line, ANSI.brown, ANSI.reset))
+                     % (ANSI.clear_line, ANSI.brown, ANSI.reset))
 
     for pg in group_packages(pkgs):
         sys.stderr.write('%s%s%-40s%s (%s%4d%s of %s%4d%s need updating)\r'
-                % (ANSI.clear_line, ANSI.green, pg[0].key, ANSI.reset,
-                    ANSI.white, total_upd, ANSI.reset,
-                    ANSI.white, total_pkg, ANSI.reset))
+                         % (ANSI.clear_line, ANSI.green, pg[0].key, ANSI.reset,
+                            ANSI.white, total_upd, ANSI.reset,
+                            ANSI.white, total_pkg, ANSI.reset))
 
         found_one = False
         found_upd = False
@@ -60,7 +64,7 @@ def process(pkgs, fix=False):
                                 em.remove(i.r1_name)
                     except Exception as e:
                         sys.stderr.write('%s%s%s\n'
-                                % (ANSI.brown, str(e), ANSI.reset))
+                                         % (ANSI.brown, str(e), ANSI.reset))
 
         if found_one:
             total_pkg += 1
@@ -72,19 +76,19 @@ def process(pkgs, fix=False):
             total_upd += 1
 
     sys.stderr.write('%s%sDone.%s\n'
-            % (ANSI.clear_line, ANSI.white, ANSI.reset))
+                     % (ANSI.clear_line, ANSI.white, ANSI.reset))
 
 
 def main(prog_name, *argv):
     opt = optparse.OptionParser(
-        prog = prog_name,
-        usage = '%prog [<packages>...]')
+        prog=prog_name,
+        usage='%prog [<packages>...]')
     opt.add_option('-f', '--fix', action='store_true',
-            dest='fix', default=False,
-            help='Automatically update PYTHON_COMPAT')
+                   dest='fix', default=False,
+                   help='Automatically update PYTHON_COMPAT')
     opt.add_option('-r', '--repo',
-            dest='repo', default='gentoo',
-            help='Work on given repository (default: gentoo)')
+                   dest='repo', default='gentoo',
+                   help='Work on given repository (default: gentoo)')
     vals, argv = opt.parse_args(list(argv))
 
     if not argv:

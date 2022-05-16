@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 #   vim:fileencoding=utf-8
-# (c) 2013-2019 Michał Górny <mgorny@gentoo.org>
+# (c) 2013-2022 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from gentoopm import get_package_manager
 from gentoopm.basepm.atom import PMAtom
 
 from gpyutils.ansi import ANSI
-from gpyutils.implementations import (get_python_impls, get_impl_by_name,
-        read_implementations)
+from gpyutils.implementations import (get_python_impls,
+                                      get_impl_by_name,
+                                      read_implementations,
+                                      )
 from gpyutils.packages import get_package_class, group_packages, PackageClass
 from gpyutils.pycompat import EbuildMangler
 
@@ -47,7 +49,8 @@ def process_one(p, repo, old, new, printer, fix=False, stabilizations=False,
         # not a Python package
         return None
 
-    if eclass_filter is not None and not p.inherits.intersection(eclass_filter):
+    if (eclass_filter is not None
+            and not p.inherits.intersection(eclass_filter)):
         return
 
     if stabilizations and new in impls:
@@ -90,7 +93,7 @@ def process_one(p, repo, old, new, printer, fix=False, stabilizations=False,
                             em.add(new.r1_name)
                     except Exception as e:
                         sys.stderr.write('%s%s%s\n'
-                                % (ANSI.brown, str(e), ANSI.reset))
+                                         % (ANSI.brown, str(e), ANSI.reset))
 
             return True
     return False
@@ -128,7 +131,7 @@ def process_dep(repo, dep, func, package_cache):
 
 def process_pkg_deps(repo, p, f, package_cache):
     dep_groups = (p.run_dependencies, p.build_dependencies,
-            p.post_dependencies)
+                  p.post_dependencies)
     if hasattr(p, 'cbuild_build_dependencies'):
         dep_groups += (p.cbuild_build_dependencies,)
     for dg in dep_groups:
@@ -136,19 +139,19 @@ def process_pkg_deps(repo, p, f, package_cache):
             process_dep(repo, dep, f, package_cache)
 
 
-def process(repo, pkgs, old, new, printer, fix=False, stabilizations=False, deps=False,
-        package_cache=None, eclass_filter=None):
+def process(repo, pkgs, old, new, printer, fix=False, stabilizations=False,
+            deps=False, package_cache=None, eclass_filter=None):
     total_upd = 0
     total_pkg = 0
 
     sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
-            % (ANSI.clear_line, ANSI.brown, ANSI.reset))
+                     % (ANSI.clear_line, ANSI.brown, ANSI.reset))
 
-    for pg in group_packages(pkgs, key = 'slotted_atom'):
+    for pg in group_packages(pkgs, key='slotted_atom'):
         sys.stderr.write('%s%s%-40s%s (%s%4d%s of %s%4d%s need checking)\r'
-                % (ANSI.clear_line, ANSI.green, pg[0].key, ANSI.reset,
-                    ANSI.white, total_upd, ANSI.reset,
-                    ANSI.white, total_pkg, ANSI.reset))
+                         % (ANSI.clear_line, ANSI.green, pg[0].key, ANSI.reset,
+                            ANSI.white, total_upd, ANSI.reset,
+                            ANSI.white, total_pkg, ANSI.reset))
 
         p = pg[-1]
         r = process_one(p, repo, old, new,
@@ -163,40 +166,44 @@ def process(repo, pkgs, old, new, printer, fix=False, stabilizations=False, deps
         if r:
             total_upd += 1
             if deps:
-                process_pkg_deps(repo, p, functools.partial(
-                    process_one, repo=repo, old=old, new=new, fix=fix,
-                    stabilizations=stabilizations, printer=printer),
+                process_pkg_deps(
+                    repo, p, functools.partial(
+                        process_one, repo=repo, old=old, new=new, fix=fix,
+                        stabilizations=stabilizations, printer=printer),
                     package_cache)
 
     sys.stderr.write('%s%sDone.%s\n'
-            % (ANSI.clear_line, ANSI.white, ANSI.reset))
+                     % (ANSI.clear_line, ANSI.white, ANSI.reset))
 
 
 def main(prog_name, *argv):
     opt = argparse.ArgumentParser(prog=prog_name)
     me = opt.add_mutually_exclusive_group()
     me.add_argument('-f', '--fix', action='store_true',
-            help='Automatically add <new-impl> to PYTHON_COMPAT in the newest testing (and live) ebuild')
+                    help='Automatically add <new-impl> to PYTHON_COMPAT '
+                         'in the newest testing (and live) ebuild')
     me.add_argument('-s', '--stabilizations', action='store_true',
-            help='Find stabilization candidates needed for <new-impl> support')
+                    help='Find stabilization candidates needed for '
+                         '<new-impl> support')
     opt.add_argument('-d', '--depends', action='store_true',
-            help='Include the dependencies of specified packages')
+                     help='Include the dependencies of specified packages')
     opt.add_argument('-e', '--eclass-filter',
-            help='Include only ebuild using specified eclass(es)')
+                     help='Include only ebuild using specified eclass(es)')
     opt.add_argument('-m', '--maintainers', action='store_true',
-            help='Print maintainers of listed packages')
+                     help='Print maintainers of listed packages')
     opt.add_argument('-p', '--print-path', action='store_const',
-            dest='pkg_print',
-            const=lambda p: os.path.sep.join(p.path.split(os.path.sep)[-3:]),
-            help='Print relative path to the ebuild')
+                     dest='pkg_print',
+                     const=lambda p: os.path.sep.join(p.path.split(
+                         os.path.sep)[-3:]),
+                     help='Print relative path to the ebuild')
     opt.add_argument('-r', '--repo',
-            help='Work on given repository (default: gentoo)')
+                     help='Work on given repository (default: gentoo)')
     opt.add_argument('old', metavar='old-impl',
-            help='Old implementation')
+                     help='Old implementation')
     opt.add_argument('new', metavar='new-impl',
-            help='New implementation')
+                     help='New implementation')
     opt.add_argument('package', nargs='*',
-            help='Packages to scan (whole repo if none provided)')
+                     help='Packages to scan (whole repo if none provided)')
     opt.set_defaults(
        repo='gentoo',
        pkg_print=lambda p: p.slotted_atom)
@@ -223,13 +230,13 @@ def main(prog_name, *argv):
         package_cache = set()
         for pkg in vals.package:
             process(pm.repositories[vals.repo],
-                pm.repositories[vals.repo].filter(pkg), old, new,
-                fix=vals.fix, stabilizations=vals.stabilizations,
-                package_cache=package_cache, deps=vals.depends,
-                eclass_filter=eclass_filter,
-                printer=lambda p: print_package(p,
-                                                maintainers=vals.maintainers,
-                                                pkg_print=vals.pkg_print))
+                    pm.repositories[vals.repo].filter(pkg), old, new,
+                    fix=vals.fix, stabilizations=vals.stabilizations,
+                    package_cache=package_cache, deps=vals.depends,
+                    eclass_filter=eclass_filter,
+                    printer=lambda p: print_package(
+                        p, maintainers=vals.maintainers,
+                        pkg_print=vals.pkg_print))
 
     return 0
 
