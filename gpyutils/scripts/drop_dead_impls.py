@@ -15,9 +15,11 @@ from gpyutils.pycompat import EbuildMangler
 
 import optparse, sys
 
+
 pm = get_package_manager()
 read_implementations(pm)
 dead_impls = [i for i in implementations if i.status == Status.dead]
+
 
 def process(pkgs, fix=False):
     total_upd = 0
@@ -72,6 +74,7 @@ def process(pkgs, fix=False):
     sys.stderr.write('%s%sDone.%s\n'
             % (ANSI.clear_line, ANSI.white, ANSI.reset))
 
+
 def main(prog_name, *argv):
     opt = optparse.OptionParser(
         prog = prog_name,
@@ -91,6 +94,11 @@ def main(prog_name, *argv):
             process(pm.repositories[vals.repo].filter(pkg), fix=vals.fix)
 
     return 0
+
+
+def entry_point():
+    sys.exit(main(*sys.argv))
+
 
 if __name__ == '__main__':
     sys.exit(main(*sys.argv))

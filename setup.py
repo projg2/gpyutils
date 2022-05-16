@@ -14,14 +14,16 @@ setup(
 		url = 'https://github.com/mgorny/gpyutils',
 
 		packages = ['gpyutils'],
-		scripts = [
-			'gpy-depgraph',
-			'gpy-drop-dead-impls',
-			'gpy-impl',
-			'gpy-list-pkg-impls',
-			'gpy-showimpls',
-			'gpy-upgrade-impl',
-		],
+		entry_points = {
+			'console_scripts': [
+				'gpy-depgraph = gpyutils.scripts.depgraph:entry_point',
+				'gpy-drop-dead-impls = gpyutils.scripts.drop_dead_impls:entry_point',
+				'gpy-impl = gpyutils.scripts.impl:entry_point',
+				'gpy-list-pkg-impls = gpyutils.scripts.list_pkg_impls:entry_point',
+				'gpy-showimpls = gpyutils.scripts.showimpls:entry_point',
+				'gpy-upgrade-impl = gpyutils.scripts.upgrade_impl:entry_point',
+			],
+		},
 
 		classifiers = [
 			'Development Status :: 4 - Beta',

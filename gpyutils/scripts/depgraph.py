@@ -224,5 +224,9 @@ def main(prog_name, *argv):
     return 0
 
 
+def entry_point():
+    sys.exit(main(*sys.argv))
+
+
 if __name__ == '__main__':
     sys.exit(main(*sys.argv))

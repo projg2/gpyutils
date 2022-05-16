@@ -18,6 +18,7 @@ import os.path
 import re
 import sys
 
+
 pm = get_package_manager()
 
 
@@ -231,6 +232,11 @@ def main(prog_name, *argv):
                                                 pkg_print=vals.pkg_print))
 
     return 0
+
+
+def entry_point():
+    sys.exit(main(*sys.argv))
+
 
 if __name__ == '__main__':
     sys.exit(main(*sys.argv))

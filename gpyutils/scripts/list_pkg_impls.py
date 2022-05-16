@@ -81,5 +81,9 @@ def main():
     return 0
 
 
+def entry_point():
+    sys.exit(main())
+
+
 if __name__ == '__main__':
     sys.exit(main())
