@@ -53,6 +53,13 @@ def process(pkgs):
         out.append('EAPI:')
         out.append(eapi)
 
+        pep517 = "        "
+        with open(p.path) as f:
+            for l in f:
+                if l.startswith('DISTUTILS_USE_PEP517='):
+                    pep517 = "(PEP517)"
+        out.append(pep517)
+
         if st_impls:
             out.append(' STABLE:')
             out.extend(st_impls)
