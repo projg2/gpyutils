@@ -6,7 +6,7 @@
 from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
-from gpyutils.eclasses import guess_package_type, PkgType, PkgSubType
+from gpyutils.eclasses import guess_package_type, PkgType
 from gpyutils.implementations import (implementations,
         get_python_impls, read_implementations, Status)
 from gpyutils.packages import (find_redundant, get_package_class,
@@ -57,7 +57,7 @@ def process(pkgs):
                 unused_tag = ' '
 
             ptype = guess_package_type(p)
-            if ptype == PkgType.non_python:
+            if ptype is None:
                 eclass_tag = '-'
             else:
                 impls = get_python_impls(p)
@@ -66,9 +66,9 @@ def process(pkgs):
                         output[keys.index(i.short_name)] = ('%s%s%s'
                             % (i.status.color, i.short_name, ANSI.reset))
 
-                if ptype.subtype == PkgSubType.python_single:
+                if ptype == PkgType.python_single:
                     eclass_tag = ANSI.cyan + 's' + ANSI.reset
-                elif ptype.subtype == PkgSubType.python_any:
+                elif ptype == PkgType.python_any:
                     eclass_tag = ANSI.brown + 'a' + ANSI.reset
                 else:
                     eclass_tag = ' '

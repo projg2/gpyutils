@@ -7,7 +7,7 @@ from gentoopm import get_package_manager
 import gentoopm.exceptions
 
 from gpyutils.ansi import ANSI
-from gpyutils.eclasses import guess_package_type, PkgType
+from gpyutils.eclasses import guess_package_type
 from gpyutils.implementations import (get_python_impls,
         implementations, read_implementations, Status)
 from gpyutils.packages import group_packages
@@ -36,8 +36,7 @@ def process(pkgs, fix=False):
         found_upd = False
 
         for p in pg:
-            t = guess_package_type(p)
-            if not isinstance(t, PkgType.python_r1):
+            if guess_package_type(p) is None:
                 continue
 
             print(p)

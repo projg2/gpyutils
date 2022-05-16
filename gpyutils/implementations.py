@@ -3,7 +3,7 @@
 # Released under the terms of the 2-clause BSD license.
 
 from .ansi import ANSI
-from .eclasses import guess_package_type, PkgType, PkgSubType
+from .eclasses import guess_package_type, PkgType
 from .util import EnumObj
 
 import codecs, csv, fnmatch, os.path
@@ -82,9 +82,9 @@ def get_impl_by_name(name):
 
 class PythonImpls:
     def __init__(self, pkg, subtype, need_dead=False):
-        if subtype != PkgSubType.python_any and not need_dead:
+        if subtype != PkgType.python_any and not need_dead:
             # IUSE should be much faster than env
-            if subtype == PkgSubType.python_single:
+            if subtype == PkgType.python_single:
                 # len("python_single_target_") == 21
                 self._impls = [x[21:] for x in pkg.use
                         if x.startswith('python_single_target_')]
@@ -107,6 +107,6 @@ class PythonImpls:
 def get_python_impls(pkg, need_dead=False):
     t = guess_package_type(pkg)
 
-    if isinstance(t, PkgType.python_r1):
-        return PythonImpls(pkg, t.subtype, need_dead=need_dead)
+    if t is not None:
+        return PythonImpls(pkg, t, need_dead=need_dead)
     return None
