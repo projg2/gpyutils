@@ -1,26 +1,17 @@
 #   vim:fileencoding=utf-8
-# (c) 2013 Michał Górny <mgorny@gentoo.org>
+# (c) 2013-2022 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from .implementations import (get_python_impls, Status)
-from .util import EnumObj
 
+import enum
 import sys
 
-class PackageClass(object):
-    """ Package stability class. """
 
-    class non_keyworded(EnumObj(1)):
-        """ Package with empty keywords (likely live). """
-        pass
-
-    class testing(EnumObj(2)):
-        """ Package with ~ keywords only. """
-        pass
-
-    class stable(EnumObj(3)):
-        """ Package with at least a single stable keyword. """
-        pass
+class PackageClass(enum.Enum):
+    non_keyworded = enum.auto()
+    testing = enum.auto()
+    stable = enum.auto()
 
 
 def get_package_class(pkg):
