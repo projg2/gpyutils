@@ -19,7 +19,6 @@ setup(
 			'gpy-drop-dead-impls',
 			'gpy-impl',
 			'gpy-list-pkg-impls',
-			'gpy-py2',
 			'gpy-showimpls',
 			'gpy-upgrade-impl',
 			'gpy-verify-installed-reqs',
