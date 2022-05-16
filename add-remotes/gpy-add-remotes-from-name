@@ -1,0 +1,97 @@
+#!/usr/bin/env python
+#   vim:fileencoding=utf-8
+# (c) 2013-2020 Michał Górny <mgorny@gentoo.org>
+# Released under the terms of the 2-clause BSD license.
+
+from gentoopm import get_package_manager
+from gentoopm.basepm.atom import PMAtom
+
+from gpyutils.ansi import ANSI
+from gpyutils.eclasses import guess_package_type, PkgType
+from gpyutils.implementations import (get_python_impls, get_impl_by_name,
+        read_implementations)
+from gpyutils.packages import get_package_class, group_packages, PackageClass
+from gpyutils.pycompat import EbuildMangler
+
+import argparse
+import functools
+import os.path
+import re
+import sys
+
+import lxml.etree
+
+pm = get_package_manager()
+
+
+def process_one(p, repo):
+    xmlpath = os.path.join(os.path.dirname(p.path), 'metadata.xml')
+    xml = lxml.etree.parse(xmlpath)
+    upst = xml.find('upstream')
+    if upst is None:
+        upst = lxml.etree.Element('upstream')
+        xml.getroot().append(upst)
+
+    for rem in upst.findall('remote-id'):
+        if rem.get('type') == 'pypi':
+            return False
+
+    rem = lxml.etree.Element('remote-id')
+    rem.set('type', 'pypi')
+    rem.text = p.key.package
+    upst.append(rem)
+
+    with open(xmlpath, 'wb') as f:
+        f.write(b'<?xml version="1.0" encoding="UTF-8"?>\n')
+        xml.write(f, encoding='UTF-8')
+        f.write(b'\n')
+
+    return True
+
+
+def process(repo, pkgs):
+    total_upd = 0
+    total_pkg = 0
+
+    sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
+            % (ANSI.clear_line, ANSI.brown, ANSI.reset))
+
+    for pg in group_packages(pkgs, key = 'key'):
+        sys.stderr.write('%s%s%-40s%s (%s%4d%s of %s%4d%s updated)\r'
+                % (ANSI.clear_line, ANSI.green, pg[0].key, ANSI.reset,
+                    ANSI.white, total_upd, ANSI.reset,
+                    ANSI.white, total_pkg, ANSI.reset))
+
+        p = pg[-1]
+        r = process_one(p, repo)
+        if r is not None:
+            total_pkg += 1
+            if r:
+                total_upd += 1
+
+    sys.stderr.write('%s%sDone.%s\n'
+            % (ANSI.clear_line, ANSI.white, ANSI.reset))
+
+
+def main(prog_name, *argv):
+    opt = argparse.ArgumentParser(prog=prog_name)
+    opt.add_argument('-r', '--repo', default='gentoo',
+            help='Work on given repository (default: gentoo)')
+    opt.add_argument('package', nargs='*',
+            help='Packages to scan (whole repo if none provided')
+    vals = opt.parse_args(list(argv))
+
+    if not vals.package:
+        process(pm.repositories[vals.repo],
+                pm.repositories[vals.repo])
+    else:
+        package_cache = set()
+        for pkg in vals.package:
+            process(pm.repositories[vals.repo],
+                    pm.repositories[vals.repo].filter(pkg))
+
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main(*sys.argv))
