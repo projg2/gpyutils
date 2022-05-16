@@ -2,21 +2,6 @@ gpyutils
 ========
 
 
-gpy-depcheck
-------------
-
-gpy-depcheck scans the tree for -r1 packages that do not use
-``[${PYTHON_USEDEP}]`` on their -r1 dependencies. The intention of this
-script is to catch missing USE-dependencies but with the current design
-it can't distinguish between dependency omitted mistakenly
-and intentionally (unnecessary).
-
-The output consists of the -r1 package followed by an indented list
-of its dependencies that lack ``[${PYTHON_USEDEP}]``.
-
-The scan can done per-repository or per-package.
-
-
 gpy-depgraph
 ------------
 
