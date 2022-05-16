@@ -21,9 +21,6 @@ import re
 import sys
 
 
-pm = get_package_manager()
-
-
 def obfuscate_email(email):
     if email.endswith('@gentoo.org'):
         return email.split('@')[0]
@@ -177,6 +174,8 @@ def process(repo, pkgs, old, new, printer, fix=False, stabilizations=False,
 
 
 def main(prog_name, *argv):
+    pm = get_package_manager()
+
     opt = argparse.ArgumentParser(prog=prog_name)
     me = opt.add_mutually_exclusive_group()
     me.add_argument('-f', '--fix', action='store_true',

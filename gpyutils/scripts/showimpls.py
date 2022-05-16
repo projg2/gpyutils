@@ -21,14 +21,6 @@ from gpyutils.packages import (find_redundant,
 import sys
 
 
-pm = get_package_manager()
-read_implementations(pm)
-
-# omit dead impls since they get ignored anyway
-my_impls = [i for i in implementations
-            if i.status not in (Status.dead, Status.future)]
-keys = [i.short_name for i in my_impls]
-
 colors = {
     Status.dead: ANSI.red,
     Status.old: ANSI.brown,
@@ -40,6 +32,11 @@ colors = {
 
 
 def process(pkgs):
+    # omit dead impls since they get ignored anyway
+    my_impls = [i for i in implementations
+                if i.status not in (Status.dead, Status.future)]
+    keys = [i.short_name for i in my_impls]
+
     for pg in group_packages(pkgs.sorted, 'slotted_atom'):
         print('%s%s%s' % (ANSI.white, pg[0].slotted_atom, ANSI.reset))
 
@@ -95,6 +92,9 @@ def process(pkgs):
 
 
 def main(prog_name, *argv):
+    pm = get_package_manager()
+    read_implementations(pm)
+
     if not argv:
         sys.stderr.write('Usage: %s <atom>...\n' % prog_name)
         return 1

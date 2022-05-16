@@ -20,12 +20,9 @@ import optparse
 import sys
 
 
-pm = get_package_manager()
-read_implementations(pm)
-dead_impls = [i for i in implementations if i.status == Status.dead]
-
-
 def process(pkgs, fix=False):
+    dead_impls = [i for i in implementations if i.status == Status.dead]
+
     total_upd = 0
     total_pkg = 0
 
@@ -80,6 +77,9 @@ def process(pkgs, fix=False):
 
 
 def main(prog_name, *argv):
+    pm = get_package_manager()
+    read_implementations(pm)
+
     opt = optparse.OptionParser(
         prog=prog_name,
         usage='%prog [<packages>...]')

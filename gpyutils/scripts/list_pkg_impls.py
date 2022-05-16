@@ -13,10 +13,6 @@ from gpyutils.packages import (get_package_class, group_packages,
 import sys
 
 
-pm = get_package_manager()
-read_implementations(pm)
-
-
 def process(pkgs):
     key = 'slotted_atom'
     for pg in group_packages(pkgs.sorted, key):
@@ -77,6 +73,9 @@ def process(pkgs):
 
 
 def main():
+    pm = get_package_manager()
+    read_implementations(pm)
+
     process(pm.repositories['gentoo'])
     return 0
 

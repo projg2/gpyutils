@@ -12,10 +12,9 @@ from gpyutils.pycompat import EbuildMangler
 import sys
 
 
-pm = get_package_manager()
-
-
 def main(prog_name, *argv):
+    pm = get_package_manager()
+
     if len(argv) < 2:
         print('Usage: %s <foo.ebuild> <[+|-]impl>...' % prog_name)
         return 1
