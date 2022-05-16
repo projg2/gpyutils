@@ -1,0 +1,44 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "gpyutils"
+authors = [{name = "Michał Górny", email = "mgorny@gentoo.org"}]
+readme = "README.rst"
+dynamic = ["version", "description"]
+license = {file = "COPYING"}
+requires-python = ">=3.8"
+dependencies = [
+    "gentoopm",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: POSIX",
+    "Programming Language :: Python",
+    "Topic :: System :: Installation/Setup",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+]
+
+[project.scripts]
+gpy-depgraph = "gpyutils.scripts.depgraph:entry_point"
+gpy-drop-dead-impls = "gpyutils.scripts.drop_dead_impls:entry_point"
+gpy-impl = "gpyutils.scripts.impl:entry_point"
+gpy-list-pkg-impls = "gpyutils.scripts.list_pkg_impls:entry_point"
+gpy-showimpls = "gpyutils.scripts.showimpls:entry_point"
+gpy-upgrade-impl = "gpyutils.scripts.upgrade_impl:entry_point"
+
+[project.urls]
+Homepage = "https://github.com/mgorny/gpyutils/"
+
+[tool.flit.sdist]
+include = [
+    "tox.ini",
+]
