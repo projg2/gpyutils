@@ -80,14 +80,7 @@ def get_impl_by_name(name):
     raise KeyError(name)
 
 
-class PythonImpls(object):
-    def __iter__(self):
-        for i in implementations:
-            if i in self:
-                yield i
-
-
-class PythonR1Impls(PythonImpls):
+class PythonImpls:
     def __init__(self, pkg, subtype, need_dead=False):
         if subtype != PkgSubType.python_any and not need_dead:
             # IUSE should be much faster than env
@@ -102,6 +95,11 @@ class PythonR1Impls(PythonImpls):
         else:
             self._impls = pkg.environ['PYTHON_COMPAT[*]'].split()
 
+    def __iter__(self):
+        for i in implementations:
+            if i in self:
+                yield i
+
     def __contains__(self, i):
         return i.r1_name in self._impls
 
@@ -110,5 +108,5 @@ def get_python_impls(pkg, need_dead=False):
     t = guess_package_type(pkg)
 
     if isinstance(t, PkgType.python_r1):
-        return PythonR1Impls(pkg, t.subtype, need_dead=need_dead)
+        return PythonImpls(pkg, t.subtype, need_dead=need_dead)
     return None
