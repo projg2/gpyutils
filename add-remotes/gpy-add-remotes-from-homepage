@@ -1,17 +1,12 @@
 #!/usr/bin/env python
 #   vim:fileencoding=utf-8
-# (c) 2013-2020 Michał Górny <mgorny@gentoo.org>
+# (c) 2013-2022 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from gentoopm import get_package_manager
-from gentoopm.basepm.atom import PMAtom
 
 from gpyutils.ansi import ANSI
-from gpyutils.eclasses import guess_package_type, PkgType
-from gpyutils.implementations import (get_python_impls, get_impl_by_name,
-        read_implementations)
-from gpyutils.packages import get_package_class, group_packages, PackageClass
-from gpyutils.pycompat import EbuildMangler
+from gpyutils.packages import group_packages
 
 import argparse
 import functools
@@ -20,6 +15,7 @@ import re
 import sys
 
 import lxml.etree
+
 
 pm = get_package_manager()
 PYPI_RE = re.compile(r'https?://pypi(?:\.python)?\.org/(?:pypi|project)/([^/]+)')
