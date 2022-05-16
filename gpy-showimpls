@@ -23,6 +23,15 @@ my_impls = [i for i in implementations
         if i.status not in (Status.dead, Status.future)]
 keys = [i.short_name for i in my_impls]
 
+colors = {
+    Status.dead: ANSI.red,
+    Status.old: ANSI.brown,
+    Status.supported: ANSI.green,
+    Status.current: ANSI.bgreen,
+    Status.experimental: ANSI.purple,
+    Status.future: ANSI.cyan,
+}
+
 
 def process(pkgs):
     for pg in group_packages(pkgs.sorted, 'slotted_atom'):
@@ -64,7 +73,7 @@ def process(pkgs):
                 for i in impls:
                     if i in my_impls:
                         output[keys.index(i.short_name)] = ('%s%s%s'
-                            % (i.status.color, i.short_name, ANSI.reset))
+                            % (colors[i.status], i.short_name, ANSI.reset))
 
                 if ptype == PkgType.python_single:
                     eclass_tag = ANSI.cyan + 's' + ANSI.reset

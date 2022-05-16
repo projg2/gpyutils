@@ -11,22 +11,22 @@ import codecs, csv, fnmatch, os.path
 
 class Status(object):
     class dead(EnumObj(1)):
-        color = ANSI.red
+        pass
 
     class old(EnumObj(2)):
-        color = ANSI.brown
+        pass
 
     class supported(EnumObj(3)):
-        color = ANSI.green
+        pass
 
     class current(EnumObj(4)):
-        color = ANSI.bgreen
+        pass
 
     class experimental(EnumObj(5)):
-        color = ANSI.purple
+        pass
 
     class future(EnumObj(6)):
-        color = ANSI.cyan
+        pass
 
     mapping = {
         'dead': dead,
