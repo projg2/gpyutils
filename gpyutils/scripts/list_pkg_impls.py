@@ -19,6 +19,7 @@ def process(pkgs):
         kw_impls = []
         st_impls = []
         eapi = None
+        pep517 = False
 
         for p in reversed(pg):
             # if the newest version does not use python, stop here
@@ -37,6 +38,14 @@ def process(pkgs):
             if not st_impls:
                 if cl == PackageClass.stable:
                     st_impls = [x.short_name for x in impls]
+            if not pep517:
+                with open(p.path) as f:
+                    for x in f:
+                        if x.startswith('DISTUTILS_USE_PEP517='):
+                            pep517 = True
+                            break
+                        if x.startswith('inherit '):
+                            break
             if kw_impls and st_impls:
                 break
 
@@ -49,12 +58,7 @@ def process(pkgs):
         out.append('EAPI:')
         out.append(eapi)
 
-        pep517 = "        "
-        with open(p.path) as f:
-            for x in f:
-                if x.startswith('DISTUTILS_USE_PEP517='):
-                    pep517 = "(PEP517)"
-        out.append(pep517)
+        out.append("(PEP517)" if pep517 else "        ")
 
         if st_impls:
             out.append(' STABLE:')
