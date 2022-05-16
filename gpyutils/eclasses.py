@@ -39,27 +39,6 @@ class PkgType(object):
     class non_python(EnumObj(1)):
         pass
 
-    class python_r0(EnumObj(2)):
-        def __init__(self, subtype_or_pkg, lazy=False):
-            if not lazy:
-                self._subtype = subtype_or_pkg()
-            else:
-                self._subtype = None
-                self._pkg = subtype_or_pkg
-
-        @property
-        def subtype(self):
-            if self._subtype is None:
-                # lazy check for multi/single-ABI
-                if self._pkg.environ['SUPPORT_PYTHON_ABIS']:
-                    self._subtype = PkgSubType.python
-                else:
-                    self._subtype = PkgSubType.python_single
-                # dereference
-                self._pkg = None
-
-            return self._subtype
-
     class python_r1(EnumObj(3)):
         def __init__(self, subtype):
             self.subtype = subtype
@@ -72,8 +51,4 @@ def guess_package_type(pkg):
         if s.eclass_r1 in pkg.inherits:
             return PkgType.python_r1(s)
 
-    if 'python' in pkg.inherits:
-        # subtype check involves running bash
-        # so better keep it lazy
-        return PkgType.python_r0(pkg, lazy=True)
     return PkgType.non_python()

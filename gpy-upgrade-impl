@@ -70,10 +70,6 @@ def process_one(p, repo, old, new, printer, fix=False, stabilizations=False,
                 printer(p)
                 return True
     elif not stabilizations and old in impls:
-        if not new.supports_r0() and isinstance(guess_package_type(p),
-                PkgType.python_r0):
-            return False
-
         if new not in impls:
             printer(p)
 
@@ -212,10 +208,6 @@ def main(prog_name, *argv):
 
     old = get_impl_by_name(vals.old)
     new = get_impl_by_name(vals.new)
-
-    if old.supports_r0() and not new.supports_r0():
-        sys.stderr.write('%s[warning: new-impl is not supported by python.eclass\n python.eclass packages will be omitted]%s\n'
-                % (ANSI.brown, ANSI.reset))
 
     eclass_filter = None
     if vals.eclass_filter:

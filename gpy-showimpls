@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #   vim:fileencoding=utf-8
-# (c) 2013-2020 Michał Górny <mgorny@gentoo.org>
+# (c) 2013-2022 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from gentoopm import get_package_manager
@@ -8,11 +8,12 @@ from gentoopm import get_package_manager
 from gpyutils.ansi import ANSI
 from gpyutils.eclasses import guess_package_type, PkgType, PkgSubType
 from gpyutils.implementations import (implementations,
-        get_python_impls, read_implementations, Status, PythonR0Impls)
+        get_python_impls, read_implementations, Status)
 from gpyutils.packages import (find_redundant, get_package_class,
         group_packages, PackageClass)
 
 import sys
+
 
 pm = get_package_manager()
 read_implementations(pm)
@@ -21,6 +22,7 @@ read_implementations(pm)
 my_impls = [i for i in implementations
         if i.status not in (Status.dead, Status.future)]
 keys = [i.short_name for i in my_impls]
+
 
 def process(pkgs):
     for pg in group_packages(pkgs.sorted, 'slotted_atom'):
@@ -64,9 +66,7 @@ def process(pkgs):
                         output[keys.index(i.short_name)] = ('%s%s%s'
                             % (i.status.color, i.short_name, ANSI.reset))
 
-                if ptype == PkgType.python_r0:
-                    eclass_tag = ANSI.gray + '*' + ANSI.reset
-                elif ptype.subtype == PkgSubType.python_single:
+                if ptype.subtype == PkgSubType.python_single:
                     eclass_tag = ANSI.cyan + 's' + ANSI.reset
                 elif ptype.subtype == PkgSubType.python_any:
                     eclass_tag = ANSI.brown + 'a' + ANSI.reset
@@ -78,6 +78,7 @@ def process(pkgs):
                 keyw_tag, pmask_tag, eclass_tag, unused_tag,
                 ' '.join(output).rstrip()))
 
+
 def main(prog_name, *argv):
     if not argv:
         sys.stderr.write('Usage: %s <atom>...\n' % prog_name)
@@ -87,6 +88,7 @@ def main(prog_name, *argv):
         process(pm.repositories['gentoo'].filter(pkg))
 
     return 0
+
 
 if __name__ == '__main__':
     sys.exit(main(*sys.argv))

@@ -1,5 +1,5 @@
 #   vim:fileencoding=utf-8
-# (c) 2013-2017 Michał Górny <mgorny@gentoo.org>
+# (c) 2013-2022 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 from .ansi import ANSI
@@ -7,6 +7,7 @@ from .eclasses import guess_package_type, PkgType, PkgSubType
 from .util import EnumObj
 
 import codecs, csv, fnmatch, os.path
+
 
 class Status(object):
     class dead(EnumObj(1)):
@@ -40,15 +41,11 @@ class Status(object):
 class PythonImpl(object):
     def __init__(self, r1_name, r0_name, status, short_name = None):
         self.r1_name = r1_name
-        self.r0_name = r0_name
-        self.short_name = short_name or r0_name
+        self.short_name = short_name
         if status in Status.mapping:
             self.status = Status.mapping[status]
         else:
             raise KeyError("Invalid implementation status: %s" % status)
-
-    def supports_r0(self):
-        return bool(self.r0_name)
 
 
 implementations = []
@@ -78,15 +75,17 @@ def read_implementations(pkg_db):
 
 def get_impl_by_name(name):
     for i in implementations:
-        if name in (i.r1_name, i.r0_name, i.short_name):
+        if name in (i.r1_name, i.short_name):
             return i
     raise KeyError(name)
+
 
 class PythonImpls(object):
     def __iter__(self):
         for i in implementations:
             if i in self:
                 yield i
+
 
 class PythonR1Impls(PythonImpls):
     def __init__(self, pkg, subtype, need_dead=False):
@@ -106,22 +105,10 @@ class PythonR1Impls(PythonImpls):
     def __contains__(self, i):
         return i.r1_name in self._impls
 
-class PythonR0Impls(PythonImpls):
-    def __init__(self, pkg):
-        self._restrict = pkg.environ['RESTRICT_PYTHON_ABIS'].split()
-
-    def __contains__(self, i):
-        # the implementation is unsupported if either:
-        # 1. eclass does not support it (r0_name is '')
-        # 2. it is listed in RESTRICT_PYTHON_ABIS
-        return i.r0_name and not any(fnmatch.fnmatch(i.r0_name, r)
-                for r in self._restrict)
 
 def get_python_impls(pkg, need_dead=False):
     t = guess_package_type(pkg)
 
     if isinstance(t, PkgType.python_r1):
         return PythonR1Impls(pkg, t.subtype, need_dead=need_dead)
-    elif isinstance(t, PkgType.python_r0):
-        return PythonR0Impls(pkg)
     return None
