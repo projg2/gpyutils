@@ -2,19 +2,6 @@ gpyutils
 ========
 
 
-gpy-cands
----------
-
-gpy-cands searches the tree for packages that could be updated to use
-the python-r1 suite eclasses. Technically, it either detects packages
-using the python.eclass or depending on the Python interpreter directly.
-
-The output consists of the package followed by the currently used
-eclass and the suggested -r1 eclass.
-
-The scan is done per-repository.
-
-
 gpy-depcheck
 ------------
 

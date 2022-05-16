@@ -15,7 +15,6 @@ setup(
 
 		packages = ['gpyutils'],
 		scripts = [
-			'gpy-cands',
 			'gpy-depcheck',
 			'gpy-depgraph',
 			'gpy-drop-dead-impls',
