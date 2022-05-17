@@ -42,3 +42,7 @@ Homepage = "https://github.com/mgorny/gpyutils/"
 include = [
     "tox.ini",
 ]
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules"
+testpaths = ["gpyutils"]
