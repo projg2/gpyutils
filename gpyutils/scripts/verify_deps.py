@@ -147,7 +147,9 @@ def process(pkgs):
     for dist_name, data in sorted(missing_dists.items()):
         for dep, allpyvers in data.items():
             for pkg, pyvers in itertools.groupby(
-                    allpyvers, lambda x: dist_name_map[dist_name][x]):
+                    allpyvers, lambda x: dist_name_map[dist_name].get(x)):
+                if pkg is None:
+                    continue
                 pyvers = set(pyvers)
                 if pyvers == set(dist_name_map[dist_name]):
                     pyvers = ["*"]
@@ -157,7 +159,9 @@ def process(pkgs):
     for dist_name, data in sorted(missing_deps.items()):
         for dep, allpyvers in data.items():
             for pkg, pyvers in itertools.groupby(
-                    allpyvers, lambda x: dist_name_map[dist_name][x]):
+                    allpyvers, lambda x: dist_name_map[dist_name].get(x)):
+                if pkg is None:
+                    continue
                 pyvers = set(pyvers)
                 if pyvers == set(dist_name_map[dist_name]):
                     pyvers = ["*"]
