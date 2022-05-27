@@ -40,9 +40,6 @@ def process(pkgs):
             f"({ANSI.white}{len(dist_info_map):4}{ANSI.reset} dist-infos in "
             f"{ANSI.white}{i:4}{ANSI.reset} packages)\r")
 
-        # TODO: temporary optimization hack
-        if p.key.category != "dev-python": continue
-
         for f in p.contents:
             if not f.endswith((".dist-info/METADATA", ".egg-info/PKG-INFO")):
                 continue
