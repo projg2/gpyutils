@@ -1,3 +1,3 @@
 """Maintenance scripts for Gentoo Python packages"""
 
-__version__ = "0.8"
+__version__ = "0.8.1"
