@@ -23,8 +23,14 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+depgraph-nx = [
+    "networkx",
+]
 test = [
     "pytest",
+]
+verify-deps = [
+    "packaging",
 ]
 
 [project.scripts]
