@@ -101,4 +101,12 @@ can also modify ebuilds.
 The scan can be done per-repository or per-package.
 
 
+gpy-verify-deps
+---------------
+
+gpy-verify-deps scans installed packages for missing dependencies.
+It compares the package's RDEPEND/PDEPEND against the requirement list
+provided in package's metadata.
+
+
 .. vim:tw=72:ft=rst:spell:spelllang=en
