@@ -74,11 +74,15 @@ def process(pkgs):
             f"{ANSI.white}{len(dist_info_map):4}{ANSI.reset})\r")
 
         dist = importlib.metadata.Distribution.at(distinfo)
-        dist_name = canonicalize_name(dist.name)
-        pkg_in_map = dist_name_map[dist_name].setdefault(pyver, pkg)
-        assert pkg_in_map == pkg, (
-            f"{dist.name} ({pyver}) belongs to two packages: "
-            f"{pkg_in_map} and {pkg}")
+        names = [dist.name]
+        names.extend(dist.metadata.get_all("Provides", []))
+        names.extend(dist.metadata.get_all("Provides-Dist", []))
+        for dist_name in names:
+            dist_name = canonicalize_name(dist_name)
+            pkg_in_map = dist_name_map[dist_name].setdefault(pyver, pkg)
+            assert pkg_in_map == pkg, (
+                f"{dist_name} ({pyver}) belongs to two packages: "
+                f"{pkg_in_map} and {pkg}")
 
     sys.stderr.write(
         f"{ANSI.clear_line}"
