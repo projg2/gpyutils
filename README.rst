@@ -108,5 +108,10 @@ gpy-verify-deps scans installed packages for missing dependencies.
 It compares the package's RDEPEND/PDEPEND against the requirement list
 provided in package's metadata.
 
+Note that the results need to be taken with a grain of salt, as the tool
+heavily relies on upstream providing the correct metadata. Sometimes
+the right solution will be to fix (or patch locally) the package's
+dependencies rather than add an unnecessary dependency to the ebuild.
+
 
 .. vim:tw=72:ft=rst:spell:spelllang=en
