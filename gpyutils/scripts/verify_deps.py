@@ -24,9 +24,13 @@ from packaging.utils import canonicalize_name
 PYTHON_QUERY_SCRIPT = b"""
 import json
 import sys
+
+from epython import EPYTHON
 from packaging.markers import default_environment
 
-json.dump(default_environment(), sys.stdout)
+output = default_environment()
+output["EPYTHON"] = EPYTHON
+json.dump(output, sys.stdout)
 """
 
 
@@ -86,14 +90,17 @@ def process(pkgs):
         f"{ANSI.cyan}Querying Python interpreter metadata...{ANSI.reset}\n")
 
     python_envs = {}
+    epythons = {}
     for p in python_versions:
         subp = subprocess.Popen([p, "-"],
                                 stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE)
         stdout, _ = subp.communicate(PYTHON_QUERY_SCRIPT)
         assert subp.returncode == 0
-        python_envs[p] = json.loads(stdout)
-        python_envs[p]["extra"] = ""
+        env = json.loads(stdout)
+        env["extra"] = ""
+        epythons[p] = env.pop("EPYTHON")
+        python_envs[p] = env
 
     sys.stderr.write(
         f"{ANSI.clear_line}"
@@ -103,11 +110,14 @@ def process(pkgs):
         lambda: collections.defaultdict(set))
     missing_deps = collections.defaultdict(
         lambda: collections.defaultdict(set))
+    missing_usedeps = collections.defaultdict(
+        lambda: collections.defaultdict(set))
     for i, (distinfo, pkg) in enumerate(dist_info_map.items()):
         spl_path = distinfo.rsplit(os.path.sep, 4)
         pyver = spl_path[-3]
         if pyver == "site-packages":
             pyver = spl_path[-4]
+        pyflag = epythons[pyver].replace(".", "_")
         dist_name = spl_path[-2]
 
         sys.stderr.write(
@@ -131,16 +141,33 @@ def process(pkgs):
                 continue
             expected_deps.add(str(matched_pkg.key))
 
+        expected_usedeps = set(expected_deps)
         def process_deps(dep):
             if not isinstance(dep, PMAtom):
                 for x in dep:
                     process_deps(x)
             else:
+                _, _, usedep = str(dep).partition("[")
+                flags = usedep.rstrip("]").split(",")
+                for f in flags:
+                    if not f.startswith(("python_targets_",
+                                         "python_single_target_")):
+                        continue
+                    if f.rstrip("()+-?").endswith(pyflag):
+                        expected_usedeps.discard(str(dep.key))
+                        break
                 expected_deps.discard(str(dep.key))
 
         process_deps((pkg.run_dependencies, pkg.post_dependencies))
         for dep in expected_deps:
             missing_deps[dist.name][dep].add(pyver)
+            # report each dep only once
+            expected_usedeps.discard(dep)
+        # special case: dev-python/pypy3 provides (cffi, hpy)
+        if pyflag == "pypy3":
+            expected_usedeps.discard("dev-python/pypy3")
+        for dep in expected_usedeps:
+            missing_usedeps[dist.name][dep].add(pyver)
 
     sys.stderr.write(
         f"{ANSI.clear_line}{ANSI.white}Done.{ANSI.reset}\n")
@@ -167,6 +194,18 @@ def process(pkgs):
                 if pyvers == set(dist_name_map[dist_name]):
                     pyvers = ["*"]
                 print(f"{pkg}: missing dependency: {dep} "
+                      f"[{' '.join(sorted(pyvers))}]")
+
+    for dist_name, data in sorted(missing_usedeps.items()):
+        for dep, allpyvers in data.items():
+            for pkg, pyvers in itertools.groupby(
+                    allpyvers, lambda x: dist_name_map[dist_name].get(x)):
+                if pkg is None:
+                    continue
+                pyvers = set(pyvers)
+                if pyvers == set(dist_name_map[dist_name]):
+                    pyvers = ["*"]
+                print(f"{pkg}: missing PYTHON_USEDEP on: {dep} "
                       f"[{' '.join(sorted(pyvers))}]")
 
 
