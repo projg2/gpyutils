@@ -23,13 +23,28 @@ from packaging.utils import canonicalize_name
 
 PYTHON_QUERY_SCRIPT = b"""
 import json
+import os
+import platform
 import sys
 
 from epython import EPYTHON
-from packaging.markers import default_environment
 
-output = default_environment()
-output["EPYTHON"] = EPYTHON
+# see packaging/markers.py: default_environment()
+output = {
+    "EPYTHON": EPYTHON,
+    "implementation_name": sys.implementation.name,
+    # NB this doesn't account for beta versions but should be good enough
+    "implementation_version": "{}.{}.{}".format(*sys.version_info[:3]),
+    "os_name": os.name,
+    "platform_machine": platform.machine(),
+    "platform_release": platform.release(),
+    "platform_system": platform.system(),
+    "platform_version": platform.version(),
+    "python_full_version": platform.python_version(),
+    "platform_python_implementation": platform.python_implementation(),
+    "python_version": ".".join(platform.python_version_tuple()[:2]),
+    "sys_platform": sys.platform,
+}
 json.dump(output, sys.stdout)
 """
 
