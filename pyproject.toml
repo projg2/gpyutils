@@ -40,6 +40,7 @@ gpy-impl = "gpyutils.scripts.impl:entry_point"
 gpy-list-pkg-impls = "gpyutils.scripts.list_pkg_impls:entry_point"
 gpy-pkgs-with-newest-stable = "gpyutils.scripts.pkgs_with_newest_stable:entry_point"
 gpy-showimpls = "gpyutils.scripts.showimpls:entry_point"
+gpy-to-pypi-eclass = "gpyutils.scripts.to_pypi_eclass:entry_point"
 gpy-upgrade-impl = "gpyutils.scripts.upgrade_impl:entry_point"
 gpy-verify-deps = "gpyutils.scripts.verify_deps:entry_point"
 
