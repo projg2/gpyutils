@@ -32,7 +32,7 @@ class Value(object):
         )
 
     def __str__(self):
-        assert(not self.removed)
+        assert not self.removed
         return self.local_name
 
 
@@ -110,7 +110,7 @@ range_re = re.compile(r'^(\d+)\.\.(\d+)$')
 
 class Range(Group):
     def __init__(self, f_prefix, l_prefix, values):
-        assert(len(values) == 1)
+        assert len(values) == 1
         m = range_re.match(values[0].local_name)
         if m is None:
             raise ValueError("Invalid range: %s" % values[0].local_name)

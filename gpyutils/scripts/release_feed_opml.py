@@ -100,7 +100,6 @@ def main(prog_name: str, *argv: str) -> int:
 </opml>
 """))
     folder = outxml.find("//outline")
-    last = folder
     for metadata in feeds:
         feed = lxml.etree.Element(
             "outline",

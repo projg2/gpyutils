@@ -47,7 +47,7 @@ def process(pkgs, fix=False):
                 impls = get_python_impls(p, need_dead=True)
             except (gentoopm.exceptions.InvalidBashCodeError, OSError):
                 continue
-            assert(impls is not None)
+            assert impls is not None
 
             found_one = True
 

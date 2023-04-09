@@ -57,6 +57,7 @@ def process_json_stream(stream: typing.IO[bytes]) -> None:
         # insert metavars below ^DISTUTILS_USE, or ^PYTHON_COMPAT=
         if metavars:
             inserted = []
+
             def repl(match: re.Match) -> str:
                 inserted.append(True)
                 return match.group(0) + "".join(metavars)
@@ -68,6 +69,7 @@ def process_json_stream(stream: typing.IO[bytes]) -> None:
 
         # add pypi.eclass to inherits
         inserted = []
+
         def repl(match: re.Match) -> str:
             inserted.append(True)
             return match.group(0) + " pypi"
@@ -78,6 +80,7 @@ def process_json_stream(stream: typing.IO[bytes]) -> None:
         if report["append"]:
             # change SRC_URI= to SRC_URI+=
             inserted = []
+
             def repl(match: re.Match) -> str:
                 inserted.append(True)
                 return match.group(0).replace("=", "+=")
@@ -87,6 +90,7 @@ def process_json_stream(stream: typing.IO[bytes]) -> None:
 
             # remove mirror://pypi
             inserted = []
+
             def repl(match: re.Match) -> str:
                 inserted.append(True)
                 return ""
@@ -96,6 +100,7 @@ def process_json_stream(stream: typing.IO[bytes]) -> None:
         else:
             # remove SRC_URI entirely
             inserted = []
+
             def repl(match: re.Match) -> str:
                 inserted.append(True)
                 return ""

@@ -8,7 +8,6 @@ from gentoopm.basepm.atom import PMAtom
 
 from gpyutils.ansi import ANSI
 
-import argparse
 import collections
 import importlib.metadata
 import itertools
@@ -157,6 +156,7 @@ def process(pkgs):
             expected_deps.add(str(matched_pkg.key))
 
         expected_usedeps = set(expected_deps)
+
         def process_deps(dep):
             if not isinstance(dep, PMAtom):
                 for x in dep:
