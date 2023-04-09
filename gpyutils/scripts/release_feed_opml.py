@@ -22,6 +22,7 @@ class FeedMetadata(typing.NamedTuple):
 
 
 class Getters:
+    @staticmethod
     def github(val: str) -> FeedMetadata:
         name = val.split("/")[-1]
         return FeedMetadata(
@@ -30,6 +31,7 @@ class Getters:
             f"https://github.com/{val}/releases.atom",
             f"https://github.com/{val}/releases")
 
+    @staticmethod
     def pypi(val: str) -> FeedMetadata:
         return FeedMetadata(
             "rss",
