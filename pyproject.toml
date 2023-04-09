@@ -26,7 +26,12 @@ classifiers = [
 depgraph-nx = [
     "networkx",
 ]
+release-feed-opml = [
+    "lxml",
+]
 test = [
+    "lxml",
+    "packaging",
     "pytest",
 ]
 verify-deps = [
