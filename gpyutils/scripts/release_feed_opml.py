@@ -56,6 +56,10 @@ def main(prog_name: str, *argv: str) -> int:
     default_types = ["pypi", "github"]
 
     argp = argparse.ArgumentParser(prog=prog_name)
+    argp.add_argument("--diff",
+                      type=lambda x: lxml.etree.parse(x),
+                      help="Diff against existing OPML and output only "
+                           "new feeds")
     argp.add_argument("--sort-key",
                       choices=FeedMetadata._fields,
                       default="text",
@@ -87,6 +91,12 @@ def main(prog_name: str, *argv: str) -> int:
                     break
 
     feeds.sort(key=lambda x: locale.strxfrm(getattr(x, args.sort_key)))
+
+    if args.diff is not None:
+        feeds = filter(
+            lambda x: not args.diff.xpath(f"//outline[@type={x.feed_type!r} "
+                                          f"and @xmlUrl={x.url!r}]"),
+            feeds)
 
     outxml = lxml.etree.ElementTree(lxml.etree.XML("""\
 <?xml version="1.0"?>
