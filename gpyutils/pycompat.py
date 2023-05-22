@@ -1,5 +1,5 @@
 #   vim:fileencoding=utf-8
-# (c) 2013-2018 Michał Górny <mgorny@gentoo.org>
+# (c) 2013-2023 Michał Górny <mgorny@gentoo.org>
 # Released under the terms of the 2-clause BSD license.
 
 import os
@@ -295,6 +295,9 @@ def parse_item(s):
             commit_value()
             curr[-1] = ''
             had_text = [True]
+        elif not c.isalnum() and c not in ("_", "."):
+            raise ValueError(f"Unexpected character {c!r} in PYTHON_COMPAT "
+                             f"(token: {s!r})")
         else:
             had_text = [True]
             curr[-1] += c
