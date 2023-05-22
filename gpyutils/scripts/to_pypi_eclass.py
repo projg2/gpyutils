@@ -116,6 +116,10 @@ def process_json_stream(stream: typing.IO[bytes]) -> None:
 
 def main(prog_name: str, *argv: str) -> int:
     argp = argparse.ArgumentParser(prog=prog_name)
+    argp.add_argument("-a", "--all-versions",
+                      action="store_true",
+                      help="Update all package versions rather than "
+                           "the latest (i.e. omit -f latest to pkgcheck)")
     argp.add_argument("data",
                       nargs="?",
                       type=argparse.FileType("rb"),
@@ -124,10 +128,15 @@ def main(prog_name: str, *argv: str) -> int:
     args = argp.parse_args(list(argv))
 
     if args.data is None:
-        subp = subprocess.Popen(
-            ["pkgcheck", "scan", "-f", "latest", "-c", "PythonFetchableCheck",
-             "-k", "PythonInlinePyPIURI", "-R", "JsonStream"],
-            stdout=subprocess.PIPE)
+        pkgcheck_args = [
+            "pkgcheck", "scan",
+            "-c", "PythonFetchableCheck",
+            "-k", "PythonInlinePyPIURI",
+            "-R", "JsonStream",
+        ]
+        if not args.all_versions:
+            pkgcheck_args += ["-f", "latest"]
+        subp = subprocess.Popen(pkgcheck_args, stdout=subprocess.PIPE)
         args.data = subp.stdout
     process_json_stream(args.data)
 
