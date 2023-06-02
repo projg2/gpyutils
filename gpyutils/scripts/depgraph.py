@@ -10,7 +10,36 @@ from gpyutils.ansi import ANSI
 
 import argparse
 import collections
+import dataclasses
 import sys
+
+
+@dataclasses.dataclass
+class PkgCounters:
+    deps: int = 0
+    revdeps: int = 0
+
+
+class DepCounter:
+    def start(self):
+        self.counters = {}
+
+    def add_node(self, label, mark=False):
+        self.counters[label] = PkgCounters()
+
+    def add_edge(self, src, dest, label):
+        self.counters[src].deps += 1
+        self.counters[dest].revdeps += 1
+
+    def finish(self):
+        maxlen = max(len(pkg.split(" [", 1)[0]) for pkg in self.counters)
+        print(f"{'# package':{maxlen}} revdeps deps [maintainer]")
+        for pkg, counters in sorted(self.counters.items()):
+            if " [" in pkg:
+                pkg, maintainer = pkg.split(" [", 1)
+                print(f"{pkg:{maxlen}} {counters.revdeps:7} {counters.deps:4} [{maintainer}")
+            else:
+                print(f"{pkg} {counters.revdeps:7} {counters.deps:4}")
 
 
 class DotPrinter(object):
@@ -192,6 +221,11 @@ def process(pkgsrc, pkgs, processor, marker):
 def main(prog_name, *argv):
     opt = argparse.ArgumentParser(prog=prog_name)
     action = opt.add_mutually_exclusive_group()
+    action.add_argument("-c", "--counts",
+                        dest="proc_cls", action="store_const",
+                        const=DepCounter(),
+                        help="Print a package list along with dep and revdep "
+                             "counts")
     action.add_argument('-d', '--dot-print',
                         dest='proc_cls', action='store_const',
                         const=DotPrinter(), default=DotPrinter(),
