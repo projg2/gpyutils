@@ -37,7 +37,8 @@ class DepCounter:
         for pkg, counters in sorted(self.counters.items()):
             if " [" in pkg:
                 pkg, maintainer = pkg.split(" [", 1)
-                print(f"{pkg:{maxlen}} {counters.revdeps:7} {counters.deps:4} [{maintainer}")
+                print(f"{pkg:{maxlen}} {counters.revdeps:7} {counters.deps:4} "
+                      f"[{maintainer}")
             else:
                 print(f"{pkg} {counters.revdeps:7} {counters.deps:4}")
 
