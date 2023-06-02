@@ -63,9 +63,10 @@ class NXNodeDeps(NXBase):
 class PackageSource(object):
     """ Class providing abstraction over package metadata source. """
 
-    def __init__(self, repo_name):
+    def __init__(self, repo_name, usedep_only):
         self.pm = get_package_manager()
         self.repo = self.pm.repositories[repo_name]
+        self.usedep_only = usedep_only
         self.match_cache = {}
         self.revmatch_cache = collections.defaultdict(set)
 
@@ -96,7 +97,15 @@ class PackageSource(object):
 
                 # USE deps cause problems with matching, strip them
                 # Note to self: this is ugly.
-                dep = self.pm.Atom(str(dep).partition('[')[0])
+                matcher, _, usedep = str(dep).partition("[")
+                dep = self.pm.Atom(matcher)
+                if self.usedep_only:
+                    for flag in usedep.rstrip("]").split(","):
+                        if flag.startswith(("python_targets_",
+                                            "python_single_target_")):
+                            break
+                    else:
+                        return
 
                 if dep not in self.match_cache:
                     self.match_cache[dep] = frozenset(self.repo.filter(dep))
@@ -202,6 +211,10 @@ def main(prog_name, *argv):
     opt.add_argument('-r', '--repo',
                      dest='repo', default='gentoo',
                      help='Work on given repository (default: gentoo)')
+    opt.add_argument("-U", "--usedep-only",
+                     action="store_true",
+                     help="Ignore dependency relations without USE "
+                          "dependendencies referencing PYTHON_* flags")
     opt.add_argument('file', nargs='*')
     vals = opt.parse_args(list(argv))
 
@@ -220,7 +233,7 @@ def main(prog_name, *argv):
         for x in sys.stdin:
             all_packages.add(x.strip())
 
-    pkgsrc = PackageSource(vals.repo)
+    pkgsrc = PackageSource(vals.repo, vals.usedep_only)
     process(pkgsrc, all_packages, vals.proc_cls,
             MaintainerMarker(vals.mark_maint))
 
