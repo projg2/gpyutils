@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-#   vim:fileencoding=utf-8
-# (c) 2013-2023 Michał Górny <mgorny@gentoo.org>
-# Released under the terms of the 2-clause BSD license.
+# gpyutils
+# (c) 2013-2024 Michał Górny <mgorny@gentoo.org>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 from gentoopm import get_package_manager
 

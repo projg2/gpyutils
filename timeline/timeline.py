@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-# vim:fileencoding=utf-8
-# (c) 2021 Michał Górny <mgorny@gentoo.org>
-# Released under the terms of the 2-clause BSD license.
+# gpyutils
+# (c) 2021-2024 Michał Górny <mgorny@gentoo.org>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 import argparse
 import collections

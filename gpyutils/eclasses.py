@@ -1,6 +1,6 @@
-#   vim:fileencoding=utf-8
-# (c) 2017-2022 Michał Górny <mgorny@gentoo.org>
-# Released under the terms of the 2-clause BSD license.
+# gpyutils
+# (c) 2017-2024 Michał Górny <mgorny@gentoo.org>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 import enum
 
