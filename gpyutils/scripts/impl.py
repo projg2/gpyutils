@@ -6,7 +6,11 @@
 from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
-from gpyutils.implementations import get_impl_by_name, read_implementations
+from gpyutils.implementations import (get_impl_by_name,
+                                      get_impls_by_status,
+                                      read_implementations,
+                                      Status,
+                                      )
 from gpyutils.pycompat import EbuildMangler
 
 import sys
@@ -24,7 +28,7 @@ def main(prog_name, *argv):
             ops.append(arg)
 
     if not ebuilds or not ops:
-        print(f"Usage: {prog_name} <foo.ebuild>... <[+|-]impl>...")
+        print(f"Usage: {prog_name} <foo.ebuild>... <[+|-](impl|@group)>...")
         return 1
 
     read_implementations(pm)
@@ -36,11 +40,14 @@ def main(prog_name, *argv):
             impl = a[1:]
         else:
             impl = a
-        impl = get_impl_by_name(impl)
-        if a[0] not in ('-', '%'):
-            to_add.add(impl)
+        if impl.startswith("@"):
+            impls = get_impls_by_status(Status[impl[1:]])
         else:
-            to_remove.add(impl)
+            impls = [get_impl_by_name(impl)]
+        if a[0] not in ('-', '%'):
+            to_add.update(impls)
+        else:
+            to_remove.update(impls)
 
     for ebuild in ebuilds:
         with EbuildMangler(ebuild) as em:
