@@ -9,7 +9,7 @@ import gentoopm.exceptions
 from gpyutils.ansi import ANSI
 from gpyutils.eclasses import guess_package_type
 from gpyutils.implementations import (get_python_impls,
-                                      implementations,
+                                      get_impls_by_status,
                                       read_implementations,
                                       Status,
                                       )
@@ -21,7 +21,7 @@ import sys
 
 
 def process(pkgs, fix=False):
-    dead_impls = [i for i in implementations if i.status == Status.dead]
+    dead_impls = get_impls_by_status(Status.dead)
 
     total_upd = 0
     total_pkg = 0

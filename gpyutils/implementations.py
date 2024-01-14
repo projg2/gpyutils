@@ -60,6 +60,10 @@ def get_impl_by_name(name):
     raise KeyError(name)
 
 
+def get_impls_by_status(status: Status) -> list[PythonImpl]:
+    return [i for i in implementations if i.status == status]
+
+
 class PythonImpls:
     def __init__(self, pkg, subtype, need_dead=False):
         if subtype != PkgType.python_any and not need_dead:
