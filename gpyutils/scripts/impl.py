@@ -15,15 +15,23 @@ import sys
 def main(prog_name, *argv):
     pm = get_package_manager()
 
-    if len(argv) < 2:
-        print('Usage: %s <foo.ebuild> <[+|-]impl>...' % prog_name)
+    ebuilds = []
+    ops = []
+    for arg in argv:
+        if arg.endswith(".ebuild"):
+            ebuilds.append(arg)
+        else:
+            ops.append(arg)
+
+    if not ebuilds or not ops:
+        print(f"Usage: {prog_name} <foo.ebuild>... <[+|-]impl>...")
         return 1
 
     read_implementations(pm)
 
     to_add = set()
     to_remove = set()
-    for a in argv[1:]:
+    for a in ops:
         if a[0] in ('-', '%', '+'):
             impl = a[1:]
         else:
@@ -34,15 +42,17 @@ def main(prog_name, *argv):
         else:
             to_remove.add(impl)
 
-    with EbuildMangler(argv[0]) as em:
-        before = em.value
-        for x in to_add:
-            em.add(x.r1_name)
-        for x in to_remove:
-            em.remove(x.r1_name)
-        after = em.value
-        print('%s-PYTHON_COMPAT=(%s)%s' % (ANSI.red, before, ANSI.reset))
-        print('%s+PYTHON_COMPAT=(%s)%s' % (ANSI.green, after, ANSI.reset))
+    for ebuild in ebuilds:
+        with EbuildMangler(ebuild) as em:
+            before = em.value
+            for x in to_add:
+                em.add(x.r1_name)
+            for x in to_remove:
+                em.remove(x.r1_name)
+            after = em.value
+            print(f"{ebuild}:")
+            print(f"{ANSI.red}-PYTHON_COMPAT=({before}){ANSI.reset}")
+            print(f"{ANSI.green}+PYTHON_COMPAT=({after}){ANSI.reset}")
 
     return 0
 
