@@ -4,4 +4,4 @@
 
 """Maintenance scripts for Gentoo Python packages"""
 
-__version__ = "0.11"
+__version__ = "0.12"
