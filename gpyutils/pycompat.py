@@ -81,7 +81,7 @@ class Group:
 
     @property
     def removed(self):
-        return all([x.removed for x in self.values])
+        return all(x.removed for x in self.values)
 
     def __iter__(self):
         for x in self.values:
@@ -155,7 +155,7 @@ class PythonCompat:
                 return
 
         # then, try splitting something else
-        for v in reversed(sorted(self, key=lambda x: len(x.full_name))):
+        for v in sorted(self, key=lambda x: len(x.full_name), reverse=True):
             cpfx = os.path.commonprefix((impl_name, v.full_name))
             # only those with common prefix
             if not cpfx:

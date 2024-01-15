@@ -15,7 +15,7 @@ class PackageClass(enum.Enum):
 
 def get_package_class(pkg):
     k = frozenset(pkg.keywords)
-    if any([x[0] not in ("~", "-") for x in k]):
+    if any(x[0] not in ("~", "-") for x in k):
         return PackageClass.stable
     elif k:
         return PackageClass.testing
@@ -66,8 +66,8 @@ def find_redundant(pkgs):
                 redundant = False
 
         # then determine non-redundancy via impls
-        impls = set(i for i in get_python_impls(p) or ()
-                    if i.status not in (Status.dead, Status.future))
+        impls = {i for i in get_python_impls(p) or ()
+                 if i.status not in (Status.dead, Status.future)}
         if not max_impls.issuperset(impls):
             redundant = False
             max_impls.update(impls)

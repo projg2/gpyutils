@@ -52,7 +52,7 @@ def process(pkgs, fix=False):
 
             found_one = True
 
-            if any([i in impls for i in dead_impls]):
+            if any(i in impls for i in dead_impls):
                 found_upd = True
 
                 if fix:

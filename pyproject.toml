@@ -77,7 +77,7 @@ extend-select = [
     "A",
     "COM",
     "CPY",
-#   "C4",
+    "C4",
     "EXE",
     "ISC",
     "PIE",
