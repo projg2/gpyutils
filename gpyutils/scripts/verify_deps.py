@@ -3,11 +3,6 @@
 # (c) 2022-2024 Michał Górny <mgorny@gentoo.org>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from gentoopm import get_package_manager
-from gentoopm.basepm.atom import PMAtom
-
-from gpyutils.ansi import ANSI
-
 import collections
 import importlib.metadata
 import itertools
@@ -16,9 +11,12 @@ import os.path
 import subprocess
 import sys
 
+from gentoopm import get_package_manager
+from gentoopm.basepm.atom import PMAtom
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 
+from gpyutils.ansi import ANSI
 
 PYTHON_QUERY_SCRIPT = b"""
 import json

@@ -3,14 +3,12 @@
 # (c) 2013-2024 Michał Górny <mgorny@gentoo.org>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+import sys
+
 from gentoopm import get_package_manager
 
-from gpyutils.implementations import (get_python_impls,
-                                      read_implementations)
-from gpyutils.packages import (get_package_class, group_packages,
-                               PackageClass)
-
-import sys
+from gpyutils.implementations import get_python_impls, read_implementations
+from gpyutils.packages import PackageClass, get_package_class, group_packages
 
 
 def process(pkgs):

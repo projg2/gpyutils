@@ -3,11 +3,11 @@
 # (c) 2013-2024 Michał Górny <mgorny@gentoo.org>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+import sys
+
 from gentoopm import get_package_manager
 
 from gpyutils.packages import group_packages
-
-import sys
 
 
 def process(pkgs):

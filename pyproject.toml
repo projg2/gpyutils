@@ -70,7 +70,7 @@ extend-select = [
     "E",
     "N",
     "W",
-#   "I",
+    "I",
 #   "UP",
 #   "ANN",
 #   "B",

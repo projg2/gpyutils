@@ -3,17 +3,18 @@
 # (c) 2017-2024 Michał Górny <mgorny@gentoo.org>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+import sys
+
 from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
-from gpyutils.implementations import (get_impl_by_name,
-                                      get_impls_by_status,
-                                      read_implementations,
-                                      Status,
-                                      )
+from gpyutils.implementations import (
+    Status,
+    get_impl_by_name,
+    get_impls_by_status,
+    read_implementations,
+)
 from gpyutils.pycompat import EbuildMangler
-
-import sys
 
 
 def main(prog_name, *argv):

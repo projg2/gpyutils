@@ -7,8 +7,8 @@ import argparse
 import collections
 import itertools
 import sys
-import toml
 
+import toml
 
 PROLOGUE = '''
 <html>

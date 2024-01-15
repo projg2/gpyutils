@@ -3,21 +3,22 @@
 # (c) 2013-2024 Michał Górny <mgorny@gentoo.org>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from gentoopm import get_package_manager
+import optparse
+import sys
+
 import gentoopm.exceptions
+from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
 from gpyutils.eclasses import guess_package_type
-from gpyutils.implementations import (get_python_impls,
-                                      get_impls_by_status,
-                                      read_implementations,
-                                      Status,
-                                      )
+from gpyutils.implementations import (
+    Status,
+    get_impls_by_status,
+    get_python_impls,
+    read_implementations,
+)
 from gpyutils.packages import group_packages
 from gpyutils.pycompat import EbuildMangler
-
-import optparse
-import sys
 
 
 def process(pkgs, fix=False):

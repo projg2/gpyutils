@@ -9,9 +9,7 @@ import re
 import subprocess
 import sys
 import typing
-
 from pathlib import Path
-
 
 METAVAR_INSERT_RE = re.compile(r"^\s*DISTUTILS_USE.*$", re.MULTILINE)
 METAVAR_INSERT2_RE = re.compile(r"^\s*PYTHON_COMPAT=.*$", re.MULTILINE)

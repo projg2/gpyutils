@@ -2,9 +2,9 @@
 # (c) 2013-2024 Michał Górny <mgorny@gentoo.org>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from .implementations import (get_python_impls, Status)
-
 import enum
+
+from .implementations import Status, get_python_impls
 
 
 class PackageClass(enum.Enum):

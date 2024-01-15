@@ -3,22 +3,23 @@
 # (c) 2013-2024 Michał Górny <mgorny@gentoo.org>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from gentoopm import get_package_manager
-from gentoopm.basepm.atom import PMAtom
-
-from gpyutils.ansi import ANSI
-from gpyutils.implementations import (get_python_impls,
-                                      get_impl_by_name,
-                                      read_implementations,
-                                      )
-from gpyutils.packages import get_package_class, group_packages, PackageClass
-from gpyutils.pycompat import EbuildMangler
-
 import argparse
 import functools
 import os.path
 import re
 import sys
+
+from gentoopm import get_package_manager
+from gentoopm.basepm.atom import PMAtom
+
+from gpyutils.ansi import ANSI
+from gpyutils.implementations import (
+    get_impl_by_name,
+    get_python_impls,
+    read_implementations,
+)
+from gpyutils.packages import PackageClass, get_package_class, group_packages
+from gpyutils.pycompat import EbuildMangler
 
 
 def obfuscate_email(email):

@@ -2,12 +2,12 @@
 # (c) 2013-2024 Michał Górny <mgorny@gentoo.org>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from .eclasses import guess_package_type, PkgType
-
 import codecs
 import csv
 import enum
 import os.path
+
+from .eclasses import PkgType, guess_package_type
 
 
 class Status(enum.Enum):

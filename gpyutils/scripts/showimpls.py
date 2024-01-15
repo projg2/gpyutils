@@ -3,23 +3,24 @@
 # (c) 2013-2024 Michał Górny <mgorny@gentoo.org>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+import sys
+
 from gentoopm import get_package_manager
 
 from gpyutils.ansi import ANSI
-from gpyutils.eclasses import guess_package_type, PkgType
-from gpyutils.implementations import (implementations,
-                                      get_python_impls,
-                                      read_implementations,
-                                      Status,
-                                      )
-from gpyutils.packages import (find_redundant,
-                               get_package_class,
-                               group_packages,
-                               PackageClass,
-                               )
-
-import sys
-
+from gpyutils.eclasses import PkgType, guess_package_type
+from gpyutils.implementations import (
+    Status,
+    get_python_impls,
+    implementations,
+    read_implementations,
+)
+from gpyutils.packages import (
+    PackageClass,
+    find_redundant,
+    get_package_class,
+    group_packages,
+)
 
 colors = {
     Status.dead: ANSI.red,

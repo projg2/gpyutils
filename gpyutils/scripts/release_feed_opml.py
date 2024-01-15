@@ -5,10 +5,9 @@
 
 import argparse
 import locale
-import typing
 import os
 import sys
-
+import typing
 from pathlib import Path
 
 import lxml.etree

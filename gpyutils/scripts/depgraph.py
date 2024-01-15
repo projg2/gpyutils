@@ -3,15 +3,15 @@
 # (c) 2017-2024 Michał Górny <mgorny@gentoo.org>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from gentoopm import get_package_manager
-from gentoopm.basepm.atom import PMAtom
-
-from gpyutils.ansi import ANSI
-
 import argparse
 import collections
 import dataclasses
 import sys
+
+from gentoopm import get_package_manager
+from gentoopm.basepm.atom import PMAtom
+
+from gpyutils.ansi import ANSI
 
 
 @dataclasses.dataclass
