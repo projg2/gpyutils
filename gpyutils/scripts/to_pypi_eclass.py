@@ -49,7 +49,7 @@ def process_json_stream(stream: typing.IO[bytes]) -> None:
                        else f'"{pypi_pn}"')
             metavars.append(f"\nPYPI_PN={pypi_pn}")
 
-        with open(path, "r") as f:
+        with open(path) as f:
             ebuild = f.read()
 
         # insert metavars below ^DISTUTILS_USE, or ^PYTHON_COMPAT=

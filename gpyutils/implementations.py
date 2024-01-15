@@ -19,7 +19,7 @@ class Status(enum.Enum):
     future = enum.auto()
 
 
-class PythonImpl(object):
+class PythonImpl:
     def __init__(self, r1_name, r0_name, status, short_name=None):
         self.r1_name = r1_name
         self.short_name = short_name

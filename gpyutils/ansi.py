@@ -2,7 +2,7 @@
 # (c) 2013-2024 Michał Górny <mgorny@gentoo.org>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-class ANSI(object):
+class ANSI:
     clear_line = '\033[2K'
     reset = '\033[0m'
     brown = '\033[33m'

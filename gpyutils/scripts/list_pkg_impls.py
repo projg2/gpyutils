@@ -59,7 +59,7 @@ def process(pkgs):
         if not kw_impls and not st_impls:
             continue
 
-        out = ['{:<40}'.format(str(getattr(p, key)))]
+        out = [f'{str(getattr(p, key)):<40}']
         out.append('EAPI:')
         out.append(eapi)
 

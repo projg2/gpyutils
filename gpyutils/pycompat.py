@@ -18,7 +18,7 @@ class Whitespace(str):
         return 'Whitespace(%s)' % str.__repr__(self)
 
 
-class Value(object):
+class Value:
     def __init__(self, f_name, l_name=None):
         self.full_name = f_name
         self.local_name = l_name if l_name is not None else f_name
@@ -70,7 +70,7 @@ def get_previous_val_index(values, v):
         return values.index(sorted_values[idx - 1])
 
 
-class Group(object):
+class Group:
     def __init__(self, f_prefix, l_prefix, values):
         self.full_prefix = f_prefix
         self.local_prefix = l_prefix
@@ -139,7 +139,7 @@ class Range(Group):
         return Group.__str__(self)
 
 
-class PythonCompat(object):
+class PythonCompat:
     def __init__(self):
         self.nodes = []
 
@@ -443,7 +443,7 @@ def del_impl(s, old):
 python_compat_re = re.compile(r'(?<![^\n])PYTHON_COMPAT=\((?P<value>.*)\)')
 
 
-class EbuildMangler(object):
+class EbuildMangler:
     def __init__(self, path):
         with open(path, 'rb') as f:
             data = f.read().decode('utf8')

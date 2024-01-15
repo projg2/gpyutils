@@ -43,7 +43,7 @@ class DepCounter:
                 print(f"{pkg} {counters.revdeps:7} {counters.deps:4}")
 
 
-class DotPrinter(object):
+class DotPrinter:
     def start(self):
         print('digraph {')
         print('\trankdir=LR;')
@@ -61,7 +61,7 @@ class DotPrinter(object):
         print('}')
 
 
-class NXBase(object):
+class NXBase:
     def start(self):
         import networkx
         self.nx = networkx
@@ -90,7 +90,7 @@ class NXNodeDeps(NXBase):
             print(n)
 
 
-class PackageSource(object):
+class PackageSource:
     """ Class providing abstraction over package metadata source. """
 
     def __init__(self, repo_name, usedep_only):
@@ -159,7 +159,7 @@ class PackageSource(object):
             yield ('B', frozenset(check_dep(pkg.cbuild_build_dependencies)))
 
 
-class MaintainerMarker(object):
+class MaintainerMarker:
     """ Class providing node marking based on maintainer. """
 
     def __init__(self, maintainers):
