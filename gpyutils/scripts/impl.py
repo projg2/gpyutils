@@ -37,7 +37,7 @@ def main(prog_name, *argv):
     to_add = set()
     to_remove = set()
     for a in ops:
-        if a[0] in ('-', '%', '+'):
+        if a[0] in ("-", "%", "+"):
             impl = a[1:]
         else:
             impl = a
@@ -45,7 +45,7 @@ def main(prog_name, *argv):
             impls = get_impls_by_status(Status[impl[1:]])
         else:
             impls = [get_impl_by_name(impl)]
-        if a[0] not in ('-', '%'):
+        if a[0] not in ("-", "%"):
             to_add.update(impls)
         else:
             to_remove.update(impls)
@@ -69,5 +69,5 @@ def entry_point():
     sys.exit(main(*sys.argv))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(*sys.argv))

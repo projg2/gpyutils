@@ -28,7 +28,7 @@ def process(pkgs):
 def main(prog_name, *argv):
     pm = get_package_manager()
 
-    process(pm.repositories['gentoo'])
+    process(pm.repositories["gentoo"])
 
     return 0
 
@@ -37,5 +37,5 @@ def entry_point():
     sys.exit(main(*sys.argv))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(*sys.argv))

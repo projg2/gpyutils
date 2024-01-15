@@ -83,7 +83,7 @@ def main(prog_name: str, *argv: str) -> int:
             xml = lxml.etree.parse(Path(dirpath) / "metadata.xml")
             for try_type in args.type_precedence:
                 remotes = xml.xpath(
-                    f'//upstream/remote-id[@type={try_type!r}]')
+                    f"//upstream/remote-id[@type={try_type!r}]")
                 if remotes:
                     for r in remotes:
                         feeds.append(getattr(Getters, try_type)(r.text))
@@ -133,5 +133,5 @@ def entry_point() -> None:
     sys.exit(main(*sys.argv))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(*sys.argv))

@@ -45,8 +45,8 @@ class DepCounter:
 
 class DotPrinter:
     def start(self):
-        print('digraph {')
-        print('\trankdir=LR;')
+        print("digraph {")
+        print("\trankdir=LR;")
 
     def add_node(self, label, mark=False):
         if mark:
@@ -58,7 +58,7 @@ class DotPrinter:
         print('\t"%s" -> "%s" [label="%s"];' % (src, dst, label))
 
     def finish(self):
-        print('}')
+        print("}")
 
 
 class NXBase:
@@ -102,10 +102,10 @@ class PackageSource:
 
     def cache(self, p):
         # strip maintainer info
-        pkg = p.split(' [')[0]
+        pkg = p.split(" [")[0]
         matches = frozenset(self.repo.filter(pkg))
         if not matches:
-            raise ValueError('%s matches no packages!' % pkg)
+            raise ValueError("%s matches no packages!" % pkg)
         self.match_cache[p] = matches
         for m in matches:
             self.revmatch_cache[m].add(p)
@@ -118,7 +118,7 @@ class PackageSource:
 
     def get_dep_sets(self, p):
         # TODO: option to check deps for all versions?
-        pkg = self.repo.select(p.split(' [')[0])
+        pkg = self.repo.select(p.split(" [")[0])
 
         def check_dep(dep):
             if isinstance(dep, PMAtom):
@@ -152,11 +152,11 @@ class PackageSource:
                     for r in check_dep(dp):
                         yield r
 
-        yield ('r', frozenset(check_dep(pkg.run_dependencies)))
-        yield ('b', frozenset(check_dep(pkg.build_dependencies)))
-        yield ('p', frozenset(check_dep(pkg.post_dependencies)))
-        if hasattr(pkg, 'cbuild_build_dependencies'):
-            yield ('B', frozenset(check_dep(pkg.cbuild_build_dependencies)))
+        yield ("r", frozenset(check_dep(pkg.run_dependencies)))
+        yield ("b", frozenset(check_dep(pkg.build_dependencies)))
+        yield ("p", frozenset(check_dep(pkg.post_dependencies)))
+        if hasattr(pkg, "cbuild_build_dependencies"):
+            yield ("B", frozenset(check_dep(pkg.cbuild_build_dependencies)))
 
 
 class MaintainerMarker:
@@ -173,18 +173,18 @@ class MaintainerMarker:
 
 
 def process(pkgsrc, pkgs, processor, marker):
-    sys.stderr.write('%sPopulating match cache...%s\n'
+    sys.stderr.write("%sPopulating match cache...%s\n"
                      % (ANSI.cyan, ANSI.reset))
 
     for i, p in enumerate(pkgs):
-        sys.stderr.write('%s%s%-56s%s (%s%4d%s/%s%4d%s done)\r'
+        sys.stderr.write("%s%s%-56s%s (%s%4d%s/%s%4d%s done)\r"
                          % (ANSI.clear_line, ANSI.green, p, ANSI.reset,
                             ANSI.white, i, ANSI.reset,
                             ANSI.white, len(pkgs), ANSI.reset))
 
         pkgsrc.cache(p)
 
-    sys.stderr.write('%s%sGenerating the graph...%s\n'
+    sys.stderr.write("%s%sGenerating the graph...%s\n"
                      % (ANSI.clear_line, ANSI.cyan, ANSI.reset))
     processor.start()
 
@@ -193,7 +193,7 @@ def process(pkgsrc, pkgs, processor, marker):
         processor.add_node(p, pkgsrc.is_marked(p, marker))
 
     for i, p in enumerate(pkgs):
-        sys.stderr.write('%s%s%-56s%s (%s%4d%s/%s%4d%s done)\r'
+        sys.stderr.write("%s%s%-56s%s (%s%4d%s/%s%4d%s done)\r"
                          % (ANSI.clear_line, ANSI.green, p, ANSI.reset,
                             ANSI.white, i, ANSI.reset,
                             ANSI.white, len(pkgs), ANSI.reset))
@@ -203,7 +203,7 @@ def process(pkgsrc, pkgs, processor, marker):
         for t, dep_pkgs in dep_sets:
             combined |= dep_pkgs
 
-        sys.stderr.write('%s\r' % ANSI.clear_line)
+        sys.stderr.write("%s\r" % ANSI.clear_line)
         for dep in combined:
             dep_types = []
             for t, dep_pkgs in dep_sets:
@@ -211,10 +211,10 @@ def process(pkgsrc, pkgs, processor, marker):
                     dep_types.append(t)
             assert dep_types
 
-            dep_type = '+'.join(dep_types) + 'dep'
+            dep_type = "+".join(dep_types) + "dep"
             processor.add_edge(p, dep, dep_type)
 
-    sys.stderr.write('%s%sDone.%s\n'
+    sys.stderr.write("%s%sDone.%s\n"
                      % (ANSI.clear_line, ANSI.white, ANSI.reset))
     processor.finish()
 
@@ -227,30 +227,30 @@ def main(prog_name, *argv):
                         const=DepCounter(),
                         help="Print a package list along with dep and revdep "
                              "counts")
-    action.add_argument('-d', '--dot-print',
-                        dest='proc_cls', action='store_const',
+    action.add_argument("-d", "--dot-print",
+                        dest="proc_cls", action="store_const",
                         const=DotPrinter(), default=DotPrinter(),
-                        help='Output a .dot graph (default)')
-    action.add_argument('-D', '--dependencies', metavar='PACKAGE',
-                        help='Print list of all dependencies of given PACKAGE '
-                             '(uses networkx)')
-    action.add_argument('-n', '--node-dfs',
-                        dest='proc_cls', action='store_const',
+                        help="Output a .dot graph (default)")
+    action.add_argument("-D", "--dependencies", metavar="PACKAGE",
+                        help="Print list of all dependencies of given PACKAGE "
+                             "(uses networkx)")
+    action.add_argument("-n", "--node-dfs",
+                        dest="proc_cls", action="store_const",
                         const=NXNodeDFS(),
-                        help='Produce list of nodes in depth-first-search '
-                             '(uses networkx)')
-    opt.add_argument('-m', '--mark-maintainer',
-                     dest='mark_maint', action='append', default=[],
-                     help='Highlight packages maintained by specified '
-                          'person/project (by e-mail)')
-    opt.add_argument('-r', '--repo',
-                     dest='repo', default='gentoo',
-                     help='Work on given repository (default: gentoo)')
+                        help="Produce list of nodes in depth-first-search "
+                             "(uses networkx)")
+    opt.add_argument("-m", "--mark-maintainer",
+                     dest="mark_maint", action="append", default=[],
+                     help="Highlight packages maintained by specified "
+                          "person/project (by e-mail)")
+    opt.add_argument("-r", "--repo",
+                     dest="repo", default="gentoo",
+                     help="Work on given repository (default: gentoo)")
     opt.add_argument("-U", "--usedep-only",
                      action="store_true",
                      help="Ignore dependency relations without USE "
                           "dependendencies referencing PYTHON_* flags")
-    opt.add_argument('file', nargs='*')
+    opt.add_argument("file", nargs="*")
     vals = opt.parse_args(list(argv))
 
     if vals.dependencies:
@@ -264,7 +264,7 @@ def main(prog_name, *argv):
                 for x in f:
                     all_packages.add(x.strip())
     else:
-        sys.stderr.write('[reading package dependency spec list from stdin]')
+        sys.stderr.write("[reading package dependency spec list from stdin]")
         for x in sys.stdin:
             all_packages.add(x.strip())
 
@@ -279,5 +279,5 @@ def entry_point():
     sys.exit(main(*sys.argv))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(*sys.argv))

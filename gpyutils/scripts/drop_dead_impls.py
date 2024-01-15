@@ -27,11 +27,11 @@ def process(pkgs, fix=False):
     total_upd = 0
     total_pkg = 0
 
-    sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
+    sys.stderr.write("%s%sWaiting for PM to start iterating...%s\r"
                      % (ANSI.clear_line, ANSI.brown, ANSI.reset))
 
     for pg in group_packages(pkgs):
-        sys.stderr.write('%s%s%-40s%s (%s%4d%s of %s%4d%s need updating)\r'
+        sys.stderr.write("%s%s%-40s%s (%s%4d%s of %s%4d%s need updating)\r"
                          % (ANSI.clear_line, ANSI.green, pg[0].key, ANSI.reset,
                             ANSI.white, total_upd, ANSI.reset,
                             ANSI.white, total_pkg, ANSI.reset))
@@ -61,7 +61,7 @@ def process(pkgs, fix=False):
                             for i in dead_impls:
                                 em.remove(i.r1_name)
                     except Exception as e:
-                        sys.stderr.write('%s%s%s\n'
+                        sys.stderr.write("%s%s%s\n"
                                          % (ANSI.brown, str(e), ANSI.reset))
 
         if found_one:
@@ -69,11 +69,11 @@ def process(pkgs, fix=False):
         if found_upd:
             # in case stdout & stderr goes to the same console,
             # clean up the line before printing
-            sys.stderr.write('%s\r' % ANSI.clear_line)
+            sys.stderr.write("%s\r" % ANSI.clear_line)
             print(pg[0].key)
             total_upd += 1
 
-    sys.stderr.write('%s%sDone.%s\n'
+    sys.stderr.write("%s%sDone.%s\n"
                      % (ANSI.clear_line, ANSI.white, ANSI.reset))
 
 
@@ -83,13 +83,13 @@ def main(prog_name, *argv):
 
     opt = optparse.OptionParser(
         prog=prog_name,
-        usage='%prog [<packages>...]')
-    opt.add_option('-f', '--fix', action='store_true',
-                   dest='fix', default=False,
-                   help='Automatically update PYTHON_COMPAT')
-    opt.add_option('-r', '--repo',
-                   dest='repo', default='gentoo',
-                   help='Work on given repository (default: gentoo)')
+        usage="%prog [<packages>...]")
+    opt.add_option("-f", "--fix", action="store_true",
+                   dest="fix", default=False,
+                   help="Automatically update PYTHON_COMPAT")
+    opt.add_option("-r", "--repo",
+                   dest="repo", default="gentoo",
+                   help="Work on given repository (default: gentoo)")
     vals, argv = opt.parse_args(list(argv))
 
     if not argv:
@@ -105,5 +105,5 @@ def entry_point():
     sys.exit(main(*sys.argv))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(*sys.argv))

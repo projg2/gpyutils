@@ -15,7 +15,7 @@ class PackageClass(enum.Enum):
 
 def get_package_class(pkg):
     k = frozenset(pkg.keywords)
-    if any([x[0] not in ('~', '-') for x in k]):
+    if any([x[0] not in ("~", "-") for x in k]):
         return PackageClass.stable
     elif k:
         return PackageClass.testing
@@ -23,7 +23,7 @@ def get_package_class(pkg):
         return PackageClass.non_keyworded
 
 
-def group_packages(pkgs, key='key', verbose=True):
+def group_packages(pkgs, key="key", verbose=True):
     prev_key = None
     curr = []
 
@@ -55,7 +55,7 @@ def find_redundant(pkgs):
 
         # first, determine non-redundancy via keywords
         for k in p.keywords:
-            if k.startswith('~'):
+            if k.startswith("~"):
                 v = 1
                 k = k[1:]
             else:  # stable

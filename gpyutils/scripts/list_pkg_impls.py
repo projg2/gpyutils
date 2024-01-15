@@ -12,7 +12,7 @@ from gpyutils.packages import PackageClass, get_package_class, group_packages
 
 
 def process(pkgs):
-    key = 'slotted_atom'
+    key = "slotted_atom"
     for pg in group_packages(pkgs.sorted, key):
         kw_impls = []
         st_impls = []
@@ -40,10 +40,10 @@ def process(pkgs):
                 if "distutils-r1" in p.inherits:
                     with open(p.path) as f:
                         for x in f:
-                            if x.startswith('DISTUTILS_USE_PEP517='):
+                            if x.startswith("DISTUTILS_USE_PEP517="):
                                 ptype = "(PEP517)"
                                 break
-                            if x.startswith('inherit '):
+                            if x.startswith("inherit "):
                                 ptype = "(legacy)"
                                 break
                         else:
@@ -59,15 +59,15 @@ def process(pkgs):
         if not kw_impls and not st_impls:
             continue
 
-        out = [f'{str(getattr(p, key)):<40}']
-        out.append('EAPI:')
+        out = [f"{str(getattr(p, key)):<40}"]
+        out.append("EAPI:")
         out.append(eapi)
 
         assert ptype is not None
         out.append(ptype)
 
         if st_impls:
-            out.append(' STABLE:')
+            out.append(" STABLE:")
             out.extend(st_impls)
 
         # print only extra impls
@@ -76,17 +76,17 @@ def process(pkgs):
                 kw_impls.remove(impl)
 
         if kw_impls:
-            out.append('  ~ARCH:')
+            out.append("  ~ARCH:")
             out.extend(kw_impls)
 
-        print(' '.join(out))
+        print(" ".join(out))
 
 
 def main():
     pm = get_package_manager()
     read_implementations(pm)
 
-    process(pm.repositories['gentoo'])
+    process(pm.repositories["gentoo"])
     return 0
 
 
@@ -94,5 +94,5 @@ def entry_point():
     sys.exit(main())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

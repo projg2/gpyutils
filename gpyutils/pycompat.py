@@ -15,7 +15,7 @@ class Whitespace(str):
         str.__init__(self)
 
     def __repr__(self):
-        return 'Whitespace(%s)' % str.__repr__(self)
+        return "Whitespace(%s)" % str.__repr__(self)
 
 
 class Value:
@@ -25,7 +25,7 @@ class Value:
         self.removed = False
 
     def __repr__(self):
-        return 'Value(full_name=%s, local_name=%s, removed=%s)' % (
+        return "Value(full_name=%s, local_name=%s, removed=%s)" % (
             self.full_name,
             self.local_name,
             self.removed,
@@ -88,7 +88,7 @@ class Group:
             yield x
 
     def __repr__(self):
-        return 'Group(full_prefix=%s, local_prefix=%s, values=%s)' % (
+        return "Group(full_prefix=%s, local_prefix=%s, values=%s)" % (
             self.full_prefix,
             self.local_prefix,
             self.values,
@@ -98,14 +98,14 @@ class Group:
         vals = [str(x) for x in self.values if not x.removed]
 
         if len(vals) > 1:
-            vals = '{%s}' % ','.join(vals)
+            vals = "{%s}" % ",".join(vals)
         else:
             vals = vals[0]
 
-        return ''.join((self.local_prefix, vals))
+        return "".join((self.local_prefix, vals))
 
 
-range_re = re.compile(r'^(\d+)\.\.(\d+)$')
+range_re = re.compile(r"^(\d+)\.\.(\d+)$")
 
 
 class Range(Group):
@@ -115,11 +115,11 @@ class Range(Group):
         if m is None:
             raise ValueError("Invalid range: %s" % values[0].local_name)
         Group.__init__(self, f_prefix, l_prefix,
-                       [Value(''.join((f_prefix, str(x))), str(x))
+                       [Value("".join((f_prefix, str(x))), str(x))
                         for x in range(int(m.group(1)), int(m.group(2)) + 1)])
 
     def __repr__(self):
-        return 'Range(full_prefix=%s, local_prefix=%s, values=%s)' % (
+        return "Range(full_prefix=%s, local_prefix=%s, values=%s)" % (
             self.full_prefix,
             self.local_prefix,
             self.values,
@@ -135,7 +135,7 @@ class Range(Group):
             ovalues = [x.local_name for x in vals]
             rvalues = [str(x) for x in range(minrange, maxrange + 1)]
             if ovalues == rvalues:
-                return '%s{%d..%d}' % (self.local_prefix, minrange, maxrange)
+                return "%s{%d..%d}" % (self.local_prefix, minrange, maxrange)
         return Group.__str__(self)
 
 
@@ -165,8 +165,8 @@ class PythonCompat:
                 continue
             # don't split mid-version if maintainer didn't do that already
             mid_ver_groups = [x for x in self.groups
-                              if x.local_prefix.endswith('_')]
-            if cpfx[-1] == '_' and not any(mid_ver_groups):
+                              if x.local_prefix.endswith("_")]
+            if cpfx[-1] == "_" and not any(mid_ver_groups):
                 continue
 
             suff1 = v.full_name[len(cpfx):]
@@ -204,7 +204,7 @@ class PythonCompat:
             i = 0
 
         self.nodes.insert(i + 1, v)
-        self.nodes.insert(i + 1 if prepend_ws else i + 2, Whitespace(' '))
+        self.nodes.insert(i + 1 if prepend_ws else i + 2, Whitespace(" "))
 
     def remove(self, impl_name):
         for i in self:
@@ -249,39 +249,39 @@ class PythonCompat:
                         self.nodes[i + 1].removed = True
                 first = False
 
-        return ''.join([str(x) for x in self.nodes if not x.removed])
+        return "".join([str(x) for x in self.nodes if not x.removed])
 
 
 def parse_item(s):
     depth = 0
-    curr = ['']
+    curr = [""]
     values = [[]]
     had_text = []
 
     def commit_value():
         if had_text:
-            values[-1].append(Value(''.join(curr), curr[-1]))
+            values[-1].append(Value("".join(curr), curr[-1]))
             had_text.pop()
 
     for c in s:
-        if c == '{':
+        if c == "{":
             depth += 1
-            curr.append('')
+            curr.append("")
             values.append([])
             had_text = [True]
-        elif c == '}':
+        elif c == "}":
             if depth == 0:
                 raise ValueError("Unmatched closing brace '}'")
 
             commit_value()
             if values[-1]:
                 # range thingie
-                if len(values[-1]) == 1 and '..' in values[-1][0].local_name:
+                if len(values[-1]) == 1 and ".." in values[-1][0].local_name:
                     cls = Range
                 else:
                     cls = Group
                 values[-2].append(cls(
-                    ''.join(curr[:-1]),
+                    "".join(curr[:-1]),
                     curr[-2],
                     values[-1],
                 ))
@@ -289,11 +289,11 @@ def parse_item(s):
             depth -= 1
             curr.pop()
             values.pop()
-        elif c == ',':
+        elif c == ",":
             if depth == 0:
                 raise ValueError("Comma ',' outside brace")
             commit_value()
-            curr[-1] = ''
+            curr[-1] = ""
             had_text = [True]
         elif not c.isalnum() and c not in ("_", "."):
             raise ValueError(f"Unexpected character {c!r} in PYTHON_COMPAT "
@@ -309,7 +309,7 @@ def parse_item(s):
     return values[0][0]
 
 
-ws_split_re = re.compile(r'(\s+)')
+ws_split_re = re.compile(r"(\s+)")
 
 
 def parse(s):
@@ -440,33 +440,33 @@ def del_impl(s, old):
     return str(pc)
 
 
-python_compat_re = re.compile(r'(?<![^\n])PYTHON_COMPAT=\((?P<value>.*)\)')
+python_compat_re = re.compile(r"(?<![^\n])PYTHON_COMPAT=\((?P<value>.*)\)")
 
 
 class EbuildMangler:
     def __init__(self, path):
-        with open(path, 'rb') as f:
-            data = f.read().decode('utf8')
+        with open(path, "rb") as f:
+            data = f.read().decode("utf8")
 
         m = python_compat_re.search(data)
         if m:
             self._path = path
             self._data = data
-            self._value = parse(m.group('value'))
+            self._value = parse(m.group("value"))
             self._start = m.start()
             self._end = m.end()
         else:
-            raise KeyError('Unable to find PYTHON_COMPAT in %s' % path)
+            raise KeyError("Unable to find PYTHON_COMPAT in %s" % path)
 
     def write(self):
-        data = ''.join((self._data[:self._start],
-                        'PYTHON_COMPAT=(', str(self._value), ')',
+        data = "".join((self._data[:self._start],
+                        "PYTHON_COMPAT=(", str(self._value), ")",
                         self._data[self._end:]))
 
         with tempfile.NamedTemporaryFile(
-                'wb', dir=os.path.dirname(self._path), delete=False) as f:
+                "wb", dir=os.path.dirname(self._path), delete=False) as f:
             tmp_path = f.name
-            f.write(data.encode('utf8'))
+            f.write(data.encode("utf8"))
 
         shutil.copymode(self._path, tmp_path)
         os.rename(tmp_path, self._path)

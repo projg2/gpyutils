@@ -23,20 +23,20 @@ from gpyutils.pycompat import EbuildMangler
 
 
 def obfuscate_email(email):
-    if email.endswith('@gentoo.org'):
-        return email.split('@')[0]
-    return email.replace('@', '[at]')
+    if email.endswith("@gentoo.org"):
+        return email.split("@")[0]
+    return email.replace("@", "[at]")
 
 
 def print_package(p, pkg_print, maintainers=False):
     # in case stdout & stderr goes to the same console,
     # clean up the line before printing
-    sys.stderr.write('%s\r' % ANSI.clear_line)
+    sys.stderr.write("%s\r" % ANSI.clear_line)
     out = str(pkg_print(p))
     if maintainers:
-        out += ' ['
-        out += ' '.join(obfuscate_email(m.email) for m in p.maintainers)
-        out += ']'
+        out += " ["
+        out += " ".join(obfuscate_email(m.email) for m in p.maintainers)
+        out += "]"
     print(out)
 
 
@@ -90,14 +90,14 @@ def process_one(p, repo, old, new, printer, fix=False, stabilizations=False,
                         with EbuildMangler(path) as em:
                             em.add(new.r1_name)
                     except Exception as e:
-                        sys.stderr.write('%s%s%s\n'
+                        sys.stderr.write("%s%s%s\n"
                                          % (ANSI.brown, str(e), ANSI.reset))
 
             return True
     return False
 
 
-usedep_re = re.compile(r'^(?P<pkg>[^\[]*)(?:\[(?P<flags>[^:]*)\])?(?:::.*)?$')
+usedep_re = re.compile(r"^(?P<pkg>[^\[]*)(?:\[(?P<flags>[^:]*)\])?(?:::.*)?$")
 
 
 def process_dep(repo, dep, func, package_cache):
@@ -111,15 +111,15 @@ def process_dep(repo, dep, func, package_cache):
         # only packages with use-deps are interesting to us
         # (hack copied from gpy-depcheck)
         m = usedep_re.match(str(dep))
-        flags = (m.group('flags') or '').split(',')
+        flags = (m.group("flags") or "").split(",")
         for f in flags:
-            if f.startswith('python_targets_'):
+            if f.startswith("python_targets_"):
                 # ok, dep's there
                 break
         else:
             return
 
-        pkg = repo.select(m.group('pkg'))
+        pkg = repo.select(m.group("pkg"))
         assert pkg
         if pkg not in package_cache:
             package_cache.add(pkg)
@@ -130,7 +130,7 @@ def process_dep(repo, dep, func, package_cache):
 def process_pkg_deps(repo, p, f, package_cache):
     dep_groups = (p.run_dependencies, p.build_dependencies,
                   p.post_dependencies)
-    if hasattr(p, 'cbuild_build_dependencies'):
+    if hasattr(p, "cbuild_build_dependencies"):
         dep_groups += (p.cbuild_build_dependencies,)
     for dg in dep_groups:
         for dep in dg:
@@ -142,11 +142,11 @@ def process(repo, pkgs, old, new, printer, fix=False, stabilizations=False,
     total_upd = 0
     total_pkg = 0
 
-    sys.stderr.write('%s%sWaiting for PM to start iterating...%s\r'
+    sys.stderr.write("%s%sWaiting for PM to start iterating...%s\r"
                      % (ANSI.clear_line, ANSI.brown, ANSI.reset))
 
-    for pg in group_packages(pkgs, key='slotted_atom'):
-        sys.stderr.write('%s%s%-40s%s (%s%4d%s of %s%4d%s need checking)\r'
+    for pg in group_packages(pkgs, key="slotted_atom"):
+        sys.stderr.write("%s%s%-40s%s (%s%4d%s of %s%4d%s need checking)\r"
                          % (ANSI.clear_line, ANSI.green, pg[0].key, ANSI.reset,
                             ANSI.white, total_upd, ANSI.reset,
                             ANSI.white, total_pkg, ANSI.reset))
@@ -170,7 +170,7 @@ def process(repo, pkgs, old, new, printer, fix=False, stabilizations=False,
                         stabilizations=stabilizations, printer=printer),
                     package_cache)
 
-    sys.stderr.write('%s%sDone.%s\n'
+    sys.stderr.write("%s%sDone.%s\n"
                      % (ANSI.clear_line, ANSI.white, ANSI.reset))
 
 
@@ -179,33 +179,33 @@ def main(prog_name, *argv):
 
     opt = argparse.ArgumentParser(prog=prog_name)
     me = opt.add_mutually_exclusive_group()
-    me.add_argument('-f', '--fix', action='store_true',
-                    help='Automatically add <new-impl> to PYTHON_COMPAT '
-                         'in the newest testing (and live) ebuild')
-    me.add_argument('-s', '--stabilizations', action='store_true',
-                    help='Find stabilization candidates needed for '
-                         '<new-impl> support')
-    opt.add_argument('-d', '--depends', action='store_true',
-                     help='Include the dependencies of specified packages')
-    opt.add_argument('-e', '--eclass-filter',
-                     help='Include only ebuild using specified eclass(es)')
-    opt.add_argument('-m', '--maintainers', action='store_true',
-                     help='Print maintainers of listed packages')
-    opt.add_argument('-p', '--print-path', action='store_const',
-                     dest='pkg_print',
+    me.add_argument("-f", "--fix", action="store_true",
+                    help="Automatically add <new-impl> to PYTHON_COMPAT "
+                         "in the newest testing (and live) ebuild")
+    me.add_argument("-s", "--stabilizations", action="store_true",
+                    help="Find stabilization candidates needed for "
+                         "<new-impl> support")
+    opt.add_argument("-d", "--depends", action="store_true",
+                     help="Include the dependencies of specified packages")
+    opt.add_argument("-e", "--eclass-filter",
+                     help="Include only ebuild using specified eclass(es)")
+    opt.add_argument("-m", "--maintainers", action="store_true",
+                     help="Print maintainers of listed packages")
+    opt.add_argument("-p", "--print-path", action="store_const",
+                     dest="pkg_print",
                      const=lambda p: os.path.sep.join(p.path.split(
                          os.path.sep)[-3:]),
-                     help='Print relative path to the ebuild')
-    opt.add_argument('-r', '--repo',
-                     help='Work on given repository (default: gentoo)')
-    opt.add_argument('old', metavar='old-impl',
-                     help='Old implementation')
-    opt.add_argument('new', metavar='new-impl',
-                     help='New implementation')
-    opt.add_argument('package', nargs='*',
-                     help='Packages to scan (whole repo if none provided)')
+                     help="Print relative path to the ebuild")
+    opt.add_argument("-r", "--repo",
+                     help="Work on given repository (default: gentoo)")
+    opt.add_argument("old", metavar="old-impl",
+                     help="Old implementation")
+    opt.add_argument("new", metavar="new-impl",
+                     help="New implementation")
+    opt.add_argument("package", nargs="*",
+                     help="Packages to scan (whole repo if none provided)")
     opt.set_defaults(
-       repo='gentoo',
+       repo="gentoo",
        pkg_print=lambda p: p.slotted_atom)
 
     vals = opt.parse_args(list(argv))
@@ -217,7 +217,7 @@ def main(prog_name, *argv):
 
     eclass_filter = None
     if vals.eclass_filter:
-        eclass_filter = vals.eclass_filter.split(',')
+        eclass_filter = vals.eclass_filter.split(",")
 
     if not vals.package:
         process(pm.repositories[vals.repo], pm.repositories[vals.repo],
@@ -245,5 +245,5 @@ def entry_point():
     sys.exit(main(*sys.argv))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(*sys.argv))
