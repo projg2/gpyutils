@@ -67,7 +67,7 @@ def get_previous_val_index(values, v):
     if idx == 0:
         return -1
     else:
-        return values.index(sorted_values[idx-1])
+        return values.index(sorted_values[idx - 1])
 
 
 class Group(object):
@@ -77,7 +77,7 @@ class Group(object):
         self.values = values
 
     def add_sorted(self, v):
-        self.values.insert(get_previous_val_index(self.values, v)+1, v)
+        self.values.insert(get_previous_val_index(self.values, v) + 1, v)
 
     @property
     def removed(self):
@@ -116,7 +116,7 @@ class Range(Group):
             raise ValueError("Invalid range: %s" % values[0].local_name)
         Group.__init__(self, f_prefix, l_prefix,
                        [Value(''.join((f_prefix, str(x))), str(x))
-                        for x in range(int(m.group(1)), int(m.group(2))+1)])
+                        for x in range(int(m.group(1)), int(m.group(2)) + 1)])
 
     def __repr__(self):
         return 'Range(full_prefix=%s, local_prefix=%s, values=%s)' % (
@@ -133,7 +133,7 @@ class Range(Group):
             maxrange = int(vals[-1].local_name)
             # lazy way of checking
             ovalues = [x.local_name for x in vals]
-            rvalues = [str(x) for x in range(minrange, maxrange+1)]
+            rvalues = [str(x) for x in range(minrange, maxrange + 1)]
             if ovalues == rvalues:
                 return '%s{%d..%d}' % (self.local_prefix, minrange, maxrange)
         return Group.__str__(self)
@@ -203,8 +203,8 @@ class PythonCompat(object):
         if i == -1 and isinstance(self.nodes[0], Whitespace):
             i = 0
 
-        self.nodes.insert(i+1, v)
-        self.nodes.insert(i+1 if prepend_ws else i+2, Whitespace(' '))
+        self.nodes.insert(i + 1, v)
+        self.nodes.insert(i + 1 if prepend_ws else i + 2, Whitespace(' '))
 
     def remove(self, impl_name):
         for i in self:
@@ -244,9 +244,9 @@ class PythonCompat(object):
             if not isinstance(x, Whitespace):
                 if x.removed:
                     if not first:
-                        self.nodes[i-1].removed = True
+                        self.nodes[i - 1].removed = True
                     else:
-                        self.nodes[i+1].removed = True
+                        self.nodes[i + 1].removed = True
                 first = False
 
         return ''.join([str(x) for x in self.nodes if not x.removed])
