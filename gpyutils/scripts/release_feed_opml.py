@@ -74,7 +74,7 @@ def main(prog_name: str, *argv: str) -> int:
                       help="Paths to process (recursively)")
     args = argp.parse_args(list(argv))
 
-    feeds = []
+    feeds_set = set()
     for path in args.path:
         for dirpath, dirnames, filenames in os.walk(path):
             if "metadata.xml" not in filenames:
@@ -86,10 +86,11 @@ def main(prog_name: str, *argv: str) -> int:
                     f"//upstream/remote-id[@type={try_type!r}]")
                 if remotes:
                     for r in remotes:
-                        feeds.append(getattr(Getters, try_type)(r.text))
+                        feeds_set.add(getattr(Getters, try_type)(r.text))
                     break
 
-    feeds.sort(key=lambda x: locale.strxfrm(getattr(x, args.sort_key)))
+    feeds = sorted(feeds_set,
+                     key=lambda x: locale.strxfrm(getattr(x, args.sort_key)))
 
     if args.diff is not None:
         feeds = filter(
