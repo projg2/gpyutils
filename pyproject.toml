@@ -55,6 +55,7 @@ Homepage = "https://github.com/mgorny/gpyutils/"
 
 [tool.flit.sdist]
 include = [
+    "COPYING",
     "tox.ini",
 ]
 
