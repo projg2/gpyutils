@@ -151,7 +151,12 @@ def process(pkgs):
             if matched_pkg is None:
                 missing_dists[dist.name][dep_name].add(pyver)
                 continue
-            expected_deps.add(str(matched_pkg.key))
+            matched_dep = str(matched_pkg.key)
+            # map dev-python/pypy3_* subpackages into the common
+            # dev-python/pypy3 dependency
+            if matched_dep.startswith("dev-python/pypy3_"):
+                matched_dep = "dev-python/pypy3"
+            expected_deps.add(matched_dep)
 
         expected_usedeps = set(expected_deps)
 
