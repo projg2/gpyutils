@@ -229,7 +229,7 @@ def main(prog_name, *argv):
                              "counts")
     action.add_argument("-d", "--dot-print",
                         dest="proc_cls", action="store_const",
-                        const=DotPrinter(), default=DotPrinter(),
+                        const=DotPrinter(),
                         help="Output a .dot graph (default)")
     action.add_argument("-D", "--dependencies", metavar="PACKAGE",
                         help="Print list of all dependencies of given PACKAGE "
@@ -251,6 +251,7 @@ def main(prog_name, *argv):
                      help="Ignore dependency relations without USE "
                           "dependendencies referencing PYTHON_* flags")
     opt.add_argument("file", nargs="*")
+    opt.set_defaults(proc_cls=DotPrinter())
     vals = opt.parse_args(list(argv))
 
     if vals.dependencies:
