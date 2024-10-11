@@ -76,8 +76,10 @@ class Group:
         self.local_prefix = l_prefix
         self.values = values
 
-    def add_sorted(self, v):
+    def add_sorted(self, v: str) -> bool:
+        """Add value to the group and return True if it can be added"""
         self.values.insert(get_previous_val_index(self.values, v) + 1, v)
+        return True
 
     @property
     def removed(self):
@@ -118,6 +120,13 @@ class Range(Group):
                        [Value("".join((f_prefix, str(x))), str(x))
                         for x in range(int(m.group(1)), int(m.group(2)) + 1)])
 
+    def add_sorted(self, v: str) -> bool:
+        try:
+            int(v.local_name)
+        except ValueError:
+            return False
+        return super().add_sorted(v)
+
     def __repr__(self):
         return "Range(full_prefix=%s, local_prefix=%s, values=%s)" % (
             self.full_prefix,
@@ -151,8 +160,9 @@ class PythonCompat:
         # longer groups come first, so that should be good enough
         for g in self.groups:
             if impl_name.startswith(g.full_prefix):
-                g.add_sorted(Value(impl_name, impl_name[len(g.full_prefix):]))
-                return
+                value = Value(impl_name, impl_name[len(g.full_prefix):])
+                if g.add_sorted(value):
+                    return
 
         # then, try splitting something else
         for v in sorted(self, key=lambda x: len(x.full_name), reverse=True):
@@ -383,6 +393,12 @@ def add_impl(s, new):
     'pypy{,3,4}'
     >>> add_impl('pypy{3,4}', 'pypy')
     'pypy{,3,4}'
+    >>> add_impl('python3_{12,13}', 'python3_13t')
+    'python3_{12,13,13t}'
+    >>> add_impl('python3_{12..13}', 'python3_13t')
+    'python3_{12..13} python3_13t'
+    >>> add_impl('python3_13', 'python3_13t')  # TODO
+    'python3_13 python3_13t'
     """
     pc = parse(s)
     pc.add(new)
@@ -434,6 +450,18 @@ def del_impl(s, old):
     'pypy'
     >>> del_impl('pypy{3,}', 'pypy')
     'pypy3'
+    >>> del_impl('python3_{10..13} python3_13t', 'python3_13t')
+    'python3_{10..13}'
+    >>> del_impl('python3_{10..13} python3_13t', 'python3_10')
+    'python3_{11..13} python3_13t'
+    >>> del_impl('python3_{10..13} python3_13t', 'python3_13')
+    'python3_{10..12} python3_13t'
+    >>> del_impl('python3_{10..13} python3_13t', 'python3_12')
+    'python3_{10,11,13} python3_13t'
+    >>> del_impl('python3_{13,13t}', 'python3_13t')
+    'python3_13'
+    >>> del_impl('python3_{13,13t}', 'python3_13')
+    'python3_13t'
     """
     pc = parse(s)
     pc.remove(old)
