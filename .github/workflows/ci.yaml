@@ -4,7 +4,7 @@ jobs:
   build:
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "pypy-3.9", "pypy-3.10"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy-3.9", "pypy-3.10"]
       fail-fast: false
     runs-on: ubuntu-22.04
     steps:
@@ -26,7 +26,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: "3.11"
+          python-version: "3.13"
       - name: Install tox
         run: pip install tox
       - name: Test using tox
