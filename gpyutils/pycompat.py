@@ -74,9 +74,12 @@ class Group:
     prefix: str
     suffix: str
     values: list[Value]
+    is_range: bool = False
 
     def add_sorted(self, v: str) -> bool:
         """Add value to the group and return True if it can be added"""
+        if self.is_range and not v.local_name.isdigit():
+            return False
         self.values.insert(get_previous_val_index(self.values, v) + 1, v)
         return True
 
@@ -89,37 +92,23 @@ class Group:
             yield x
 
     def __str__(self):
-        vals = [str(x) for x in self.values if not x.removed]
+        vals = [x for x in self.values if not x.removed]
 
         if len(vals) > 1:
-            vals = "{%s}" % ",".join(vals)
+            if self.is_range:
+                # try a continuous range
+                minrange = int(vals[0].local_name)
+                maxrange = int(vals[-1].local_name)
+                # lazy way of checking
+                ovalues = [x.local_name for x in vals]
+                rvalues = [str(x) for x in range(minrange, maxrange + 1)]
+                if ovalues == rvalues:
+                    return f"{self.prefix}{{{minrange}..{maxrange}}}{self.suffix}"
+            vals = f"{{{','.join(str(x) for x in vals)}}}"
         else:
             vals = vals[0]
 
         return f"{self.prefix}{vals}{self.suffix}"
-
-
-@dataclass
-class Range(Group):
-    def add_sorted(self, v: str) -> bool:
-        try:
-            int(v.local_name)
-        except ValueError:
-            return False
-        return super().add_sorted(v)
-
-    def __str__(self):
-        # try a continuous range if we have >1 value
-        vals = [x for x in self.values if not x.removed]
-        if len(vals) > 1:
-            minrange = int(vals[0].local_name)
-            maxrange = int(vals[-1].local_name)
-            # lazy way of checking
-            ovalues = [x.local_name for x in vals]
-            rvalues = [str(x) for x in range(minrange, maxrange + 1)]
-            if ovalues == rvalues:
-                return f"{self.prefix}{{{minrange}..{maxrange}}}{self.suffix}"
-        return super().__str__()
 
 
 new_split_re = re.compile("(?P<mid> \d+) (?P<suffix> .*)", re.VERBOSE)
@@ -269,7 +258,7 @@ def parse_item(s):
             Value(f"{prefix}{x}{suffix}", f"{x}")
             for x in range(int(range_start), int(range_end) + 1)
         ]
-        return Range(prefix, suffix, values)
+        return Group(prefix, suffix, values, is_range=True)
     elif match.group("groups") is not None:
         values = groups.split(",")
         return Group(prefix, suffix,
