@@ -99,9 +99,6 @@ class Group:
         return f"{self.prefix}{vals}{self.suffix}"
 
 
-range_re = re.compile(r"^(\d+)\.\.(\d+)$")
-
-
 @dataclass
 class Range(Group):
     def add_sorted(self, v: str) -> bool:
@@ -125,6 +122,9 @@ class Range(Group):
         return super().__str__()
 
 
+new_split_re = re.compile("(?P<mid> \d+) (?P<suffix> .*)", re.VERBOSE)
+
+
 class PythonCompat:
     def __init__(self):
         self.nodes = []
@@ -146,42 +146,46 @@ class PythonCompat:
 
         # then, try splitting something else
         for v in sorted(self, key=lambda x: len(x.full_name), reverse=True):
-            cpfx = os.path.commonprefix((impl_name, v.full_name))
+            new_split = impl_name.split("_")
+            old_split = v.full_name.split("_")
+            cpfx = ""
+            while new_split[0] == old_split[0]:
+                cpfx += f"{new_split.pop(0)}_"
+                del old_split[0]
             # only those with common prefix
             if not cpfx:
                 continue
             # only split in global scope, don't nest
             if v not in self.nodes:
                 continue
-            # don't split mid-version if maintainer didn't do that already
-            mid_ver_groups = [x for x in self.groups
-                              if x.prefix.endswith("_")]
-            if cpfx[-1] == "_" and not any(mid_ver_groups):
-                continue
-
-            suff1 = v.full_name[len(cpfx):]
-            suff2 = impl_name[len(cpfx):]
             # avoid 'empty' sections (e.g. pypy{,2_0})
-            if not suff1 or not suff2:
-                continue
-            # don't split in middle of name (e.g. py{py,thon})
-            if not suff1[0].isdigit() or not suff2[0].isdigit():
+            if not old_split or not new_split:
                 continue
 
-            # don't create the group if the maintainer could have created
-            # one already but didn't (so he likely doesn't want that)
-            # e.g. if he has 'python2_5 python2_6', don't do '{2_6,2_7}'
-            group_candidates = [x for x in self.nodes
-                                if isinstance(x, Value)
-                                and x.full_name.startswith(cpfx)]
-            if len(group_candidates) > 1:
+            suff1 = new_split_re.match(old_split[-1])
+            suff2 = new_split_re.match(new_split[-1])
+
+            # split only over digits
+            if suff1 is None or suff2 is None:
+                continue
+            # don't split if we have different suffixes
+            if suff1.group("suffix") != suff2.group("suffix"):
                 continue
 
-            v1 = Value(v.full_name, suff1)
-            v2 = Value(impl_name, suff2)
+            suffix = suff1.group("suffix")
+            # don't merge if maintainer didn't use any groups for matching
+            # impls
+            if len([
+                x for x in self.nodes if isinstance(x, Value) and
+                x.full_name.startswith(cpfx) and x.full_name.endswith(suffix)
+            ]) > 1:
+                continue
+
+            v1 = Value(v.full_name, suff1.group("mid"))
+            v2 = Value(impl_name, suff2.group("mid"))
 
             i = self.nodes.index(v)
-            self.nodes[i] = Group(cpfx, "",
+            self.nodes[i] = Group(cpfx, suffix,
                                   sorted([v1, v2], key=lambda x: x.local_name))
             return
 
@@ -297,14 +301,16 @@ def parse(s):
 
 def add_impl(s, new):
     """
+    >>> add_impl('python3_13 python3_13t', 'python3_14t')
+    'python3_13 python3_{13,14}t'
     >>> add_impl('pypy1_9', 'python3_3')
     'pypy1_9 python3_3'
     >>> add_impl('python2_7', 'pypy2_0')
     'pypy2_0 python2_7'
     >>> add_impl('python2_6 python2_7 python3_2 pypy1_9', 'python3_3')
-    'python2_6 python2_7 python3_2 python3_3 pypy1_9'
+    'python2_6 python2_7 python3_{2,3} pypy1_9'
     >>> add_impl('python2_6 python2_7 python3_4 pypy1_9', 'python3_3')
-    'python2_6 python2_7 python3_3 python3_4 pypy1_9'
+    'python2_6 python2_7 python3_{3,4} pypy1_9'
     >>> add_impl('python2_{6,7} python3_{1,2}', 'python3_3')
     'python2_{6,7} python3_{1,2,3}'
     >>> add_impl('python2_{6,7} python3_2', 'python3_3')
@@ -315,10 +321,6 @@ def add_impl(s, new):
     'python{2_6,2_7,3_2,3_3} pypy1_9'
     >>> add_impl('python{2_6,2_7,3_4} pypy1_9', 'python3_3')
     'python{2_6,2_7,3_3,3_4} pypy1_9'
-    >>> add_impl('python2_7 pypy{1_9,2_0}', 'python3_3')
-    'python{2_7,3_3} pypy{1_9,2_0}'
-    >>> add_impl('python2_7', 'python3_3')
-    'python{2_7,3_3}'
     >>> add_impl('python{2_6,2_7,3_2,3_3} pypy2_0', 'jython2_7')
     'jython2_7 python{2_6,2_7,3_2,3_3} pypy2_0'
     >>> add_impl('python{2_6,2_7,3_2,3_3} pypy2_0', 'pypy')
@@ -345,14 +347,14 @@ def add_impl(s, new):
     'python3_{12..13} python3_13t'
     >>> add_impl('python3_13', 'python3_13t')
     'python3_13 python3_13t'
-    >>> add_impl('python3_13 python3_13t', 'python3_14t')
-    'python3_13 python3_13t python3_14t'
-    >>> add_impl('python3_{10..13} python3_13t', 'python3_14t')  # TODO
-    'python3_{10..13} python3_1{3t,4t}'
+    >>> add_impl('python3_{10..13} python3_13t', 'python3_14t')
+    'python3_{10..13} python3_{13,14}t'
     >>> add_impl('python3_{10..13} python3_{13,14}t', 'python3_15t')
     'python3_{10..13} python3_{13,14,15}t'
     >>> add_impl('python3_{10..13} python3_{13..14}t', 'python3_15t')
     'python3_{10..13} python3_{13..15}t'
+    >>> add_impl('python3_10', 'python3_11')
+    'python3_{10,11}'
     """
     pc = parse(s)
     pc.add(new)
