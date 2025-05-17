@@ -268,7 +268,7 @@ def parse_item(s):
     if range_ is not None:
         if suffix != "":
             raise NotImplementedError
-        return Range(prefix, [Value(f"{prefix}{range_}", range_)])
+        return Range(prefix, [Value("", range_)])
     elif match.group("groups") is not None:
         if suffix != "":
             raise NotImplementedError
