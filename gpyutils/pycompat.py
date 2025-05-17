@@ -1,5 +1,5 @@
 # gpyutils
-# (c) 2013-2024 Michał Górny <mgorny@gentoo.org>
+# (c) 2013-2025 Michał Górny <mgorny@gentoo.org>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import os
@@ -262,7 +262,28 @@ class PythonCompat:
         return "".join([str(x) for x in self.nodes if not x.removed])
 
 
+pycompat_re = re.compile(
+    r"(?P<prefix> \w*)"
+    r"(?:"
+    r"  [{]"
+    r"    (?:"
+    r"      (?P<range_start>\w+)[.][.](?P<range_end>\w+)"  # a..b
+    r"    |"
+    r"      (?P<groups> (?: \w*,)+ \w*)"  # a,b...
+    r"    )"
+    r"  [}]"
+    r"  (?P<suffix> \w*)"
+    r")?"
+    ,
+    re.VERBOSE
+)
+
+
 def parse_item(s):
+    match = pycompat_re.fullmatch(s)
+    if match is None:
+        raise ValueError(f"Invalid value in PYTHON_COMPAT: {s}")
+
     depth = 0
     curr = [""]
     values = [[]]
@@ -363,14 +384,6 @@ def add_impl(s, new):
     'python{2_7,3_3} pypy{1_9,2_0}'
     >>> add_impl('python2_7', 'python3_3')
     'python{2_7,3_3}'
-    >>> add_impl('python{2_{5,6},3_{1,2}} pypy{1_9,2_0}', 'python3_3')
-    'python{2_{5,6},3_{1,2,3}} pypy{1_9,2_0}'
-    >>> add_impl('python{2_{5,6},3_{1,2}} pypy{1_9,2_0}', 'python2_7')
-    'python{2_{5,6,7},3_{1,2}} pypy{1_9,2_0}'
-    >>> add_impl('python{2_{5,6},3_{1,2}} pypy{1_9,2_0}', 'pypy1_8')
-    'python{2_{5,6},3_{1,2}} pypy{1_8,1_9,2_0}'
-    >>> add_impl('python{2_{5,6},3_{1,2}} pypy{1_9,2_0}', 'python4_0')
-    'python{2_{5,6},3_{1,2},4_0} pypy{1_9,2_0}'
     >>> add_impl('python{2_6,2_7,3_2,3_3} pypy2_0', 'jython2_7')
     'jython2_7 python{2_6,2_7,3_2,3_3} pypy2_0'
     >>> add_impl('python{2_6,2_7,3_2,3_3} pypy2_0', 'pypy')
@@ -383,8 +396,6 @@ def add_impl(s, new):
     'python2_7 python3_{3..5}'
     >>> add_impl('python2_7 python3_{3..4}', 'python3_2')
     'python2_7 python3_{2..4}'
-    >>> add_impl('python{2_{6..7},3_{3..4}}', 'python3_2')
-    'python{2_{6..7},3_{2..4}}'
     >>> add_impl('python2_7 python3_{4..5}', 'python3_2')
     'python2_7 python3_{2,4,5}'
     >>> add_impl('pypy{,3}', 'python2_7')
@@ -423,11 +434,6 @@ def del_impl(s, old):
     ' python2_6 '
     >>> del_impl(' python2_6 python2_7 python3_2 ', 'python2_7')
     ' python2_6 python3_2 '
-    >>> del_impl(' python{2_{5,6,7},3_{1,2,3}} pypy{1_{8,9},2_0} ',
-    ...          'python2_5')
-    ' python{2_{6,7},3_{1,2,3}} pypy{1_{8,9},2_0} '
-    >>> del_impl(' python{2_{5,6,7},3_{1,2,3}} pypy{1_{8,9},2_0} ', 'pypy1_8')
-    ' python{2_{5,6,7},3_{1,2,3}} pypy{1_9,2_0} '
     >>> del_impl('python2_{6..7}', 'python2_6')
     'python2_7'
     >>> del_impl('python3_{1..5}', 'python3_1')
@@ -436,8 +442,6 @@ def del_impl(s, old):
     'python3_{1..4}'
     >>> del_impl('python3_{1..5}', 'python3_3')
     'python3_{1,2,4,5}'
-    >>> del_impl('python{2_{6..7},3_{3..5}}', 'python2_6')
-    'python{2_7,3_{3..5}}'
     >>> del_impl('pypy{,3} python2_7', 'python2_7')
     'pypy{,3}'
     >>> del_impl('pypy{,3}', 'pypy3')
