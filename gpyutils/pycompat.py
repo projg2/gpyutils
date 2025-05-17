@@ -8,6 +8,8 @@ import re
 import shutil
 import tempfile
 
+from dataclasses import dataclass
+
 
 class Whitespace(str):
     def __init__(self, s):
@@ -15,21 +17,18 @@ class Whitespace(str):
         str.__init__(self)
 
     def __repr__(self):
-        return "Whitespace(%s)" % str.__repr__(self)
+        return f"Whitespace({super().__repr__()})"
 
 
+@dataclass
 class Value:
-    def __init__(self, f_name, l_name=None):
-        self.full_name = f_name
-        self.local_name = l_name if l_name is not None else f_name
-        self.removed = False
+    full_name: str
+    local_name: str | None = None
+    removed: bool = False
 
-    def __repr__(self):
-        return "Value(full_name=%s, local_name=%s, removed=%s)" % (
-            self.full_name,
-            self.local_name,
-            self.removed,
-        )
+    def __post_init__(self) -> None:
+        if self.local_name is None:
+            self.local_name = self.full_name
 
     def __str__(self):
         assert not self.removed
@@ -70,11 +69,11 @@ def get_previous_val_index(values, v):
         return values.index(sorted_values[idx - 1])
 
 
+@dataclass
 class Group:
-    def __init__(self, f_prefix, l_prefix, values):
-        self.full_prefix = f_prefix
-        self.local_prefix = l_prefix
-        self.values = values
+    full_prefix: str
+    local_prefix: str
+    values: list[Value]
 
     def add_sorted(self, v: str) -> bool:
         """Add value to the group and return True if it can be added"""
@@ -88,13 +87,6 @@ class Group:
     def __iter__(self):
         for x in self.values:
             yield x
-
-    def __repr__(self):
-        return "Group(full_prefix=%s, local_prefix=%s, values=%s)" % (
-            self.full_prefix,
-            self.local_prefix,
-            self.values,
-        )
 
     def __str__(self):
         vals = [str(x) for x in self.values if not x.removed]
@@ -110,15 +102,17 @@ class Group:
 range_re = re.compile(r"^(\d+)\.\.(\d+)$")
 
 
+@dataclass
 class Range(Group):
-    def __init__(self, f_prefix, l_prefix, values):
-        assert len(values) == 1
-        m = range_re.match(values[0].local_name)
+    def __post_init__(self) -> None:
+        assert len(self.values) == 1
+        m = range_re.match(self.values[0].local_name)
         if m is None:
-            raise ValueError("Invalid range: %s" % values[0].local_name)
-        Group.__init__(self, f_prefix, l_prefix,
-                       [Value("".join((f_prefix, str(x))), str(x))
-                        for x in range(int(m.group(1)), int(m.group(2)) + 1)])
+            raise ValueError(f"Invalid range: {self.values[0].local_name}")
+        self.values = [
+            Value("".join((self.full_prefix, str(x))), str(x))
+            for x in range(int(m.group(1)), int(m.group(2)) + 1)
+        ]
 
     def add_sorted(self, v: str) -> bool:
         try:
@@ -126,13 +120,6 @@ class Range(Group):
         except ValueError:
             return False
         return super().add_sorted(v)
-
-    def __repr__(self):
-        return "Range(full_prefix=%s, local_prefix=%s, values=%s)" % (
-            self.full_prefix,
-            self.local_prefix,
-            self.values,
-        )
 
     def __str__(self):
         # try a continuous range if we have >1 value
