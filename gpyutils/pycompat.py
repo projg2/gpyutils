@@ -267,7 +267,7 @@ pycompat_re = re.compile(
     r"(?:"
     r"  [{]"
     r"    (?:"
-    r"      (?P<range_start>\w+)[.][.](?P<range_end>\w+)"  # a..b
+    r"      (?P<range> \w+ [.][.] \w+)"  # a..b
     r"    |"
     r"      (?P<groups> (?: \w*,)+ \w*)"  # a,b...
     r"    )"
@@ -284,60 +284,24 @@ def parse_item(s):
     if match is None:
         raise ValueError(f"Invalid value in PYTHON_COMPAT: {s}")
 
-    depth = 0
-    curr = [""]
-    values = [[]]
-    had_text = []
+    prefix = match.group("prefix")
+    range_ = match.group("range")
+    groups = match.group("groups")
+    suffix = match.group("suffix")
 
-    def commit_value():
-        if had_text:
-            values[-1].append(Value("".join(curr), curr[-1]))
-            had_text.pop()
+    if range_ is not None:
+        if suffix != "":
+            raise NotImplementedError
+        return Range(prefix, prefix, [Value(f"{prefix}{range_}", range_)])
+    elif match.group("groups") is not None:
+        if suffix != "":
+            raise NotImplementedError
+        values = groups.split(",")
+        return Group(prefix, prefix, [Value(f"{prefix}{x}", x)
+                                      for x in values])
 
-    for c in s:
-        if c == "{":
-            depth += 1
-            curr.append("")
-            values.append([])
-            had_text = [True]
-        elif c == "}":
-            if depth == 0:
-                raise ValueError("Unmatched closing brace '}'")
-
-            commit_value()
-            if values[-1]:
-                # range thingie
-                if len(values[-1]) == 1 and ".." in values[-1][0].local_name:
-                    cls = Range
-                else:
-                    cls = Group
-                values[-2].append(cls(
-                    "".join(curr[:-1]),
-                    curr[-2],
-                    values[-1],
-                ))
-
-            depth -= 1
-            curr.pop()
-            values.pop()
-        elif c == ",":
-            if depth == 0:
-                raise ValueError("Comma ',' outside brace")
-            commit_value()
-            curr[-1] = ""
-            had_text = [True]
-        elif not c.isalnum() and c not in ("_", "."):
-            raise ValueError(f"Unexpected character {c!r} in PYTHON_COMPAT "
-                             f"(token: {s!r})")
-        else:
-            had_text = [True]
-            curr[-1] += c
-
-    if depth != 0:
-        raise ValueError("Unmatched opening brace '{'")
-    commit_value()
-
-    return values[0][0]
+    assert suffix is None
+    return Value(prefix)
 
 
 ws_split_re = re.compile(r"(\s+)")
