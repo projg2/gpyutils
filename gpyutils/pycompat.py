@@ -103,16 +103,6 @@ range_re = re.compile(r"^(\d+)\.\.(\d+)$")
 
 @dataclass
 class Range(Group):
-    def __post_init__(self) -> None:
-        assert len(self.values) == 1
-        m = range_re.match(self.values[0].local_name)
-        if m is None:
-            raise ValueError(f"Invalid range: {self.values[0].local_name}")
-        self.values = [
-            Value("".join((self.prefix, str(x))), str(x))
-            for x in range(int(m.group(1)), int(m.group(2)) + 1)
-        ]
-
     def add_sorted(self, v: str) -> bool:
         try:
             int(v.local_name)
@@ -243,7 +233,7 @@ pycompat_re = re.compile(
     r"(?:"
     r"  [{]"
     r"    (?:"
-    r"      (?P<range> \w+ [.][.] \w+)"  # a..b
+    r"      (?P<range_start> \d+) [.][.] (?P<range_end> \d+)"  # a..b
     r"    |"
     r"      (?P<groups> (?: \w*,)+ \w*)"  # a,b...
     r"    )"
@@ -261,14 +251,19 @@ def parse_item(s):
         raise ValueError(f"Invalid value in PYTHON_COMPAT: {s}")
 
     prefix = match.group("prefix")
-    range_ = match.group("range")
+    range_start = match.group("range_start")
+    range_end = match.group("range_end")
     groups = match.group("groups")
     suffix = match.group("suffix")
 
-    if range_ is not None:
+    if range_start is not None:
         if suffix != "":
             raise NotImplementedError
-        return Range(prefix, [Value("", range_)])
+        values = [
+            Value(f"{prefix}{x}", f"{x}")
+            for x in range(int(range_start), int(range_end) + 1)
+        ]
+        return Range(prefix, values)
     elif match.group("groups") is not None:
         if suffix != "":
             raise NotImplementedError
