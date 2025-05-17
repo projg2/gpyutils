@@ -72,6 +72,7 @@ def get_previous_val_index(values, v):
 @dataclass
 class Group:
     prefix: str
+    suffix: str
     values: list[Value]
 
     def add_sorted(self, v: str) -> bool:
@@ -95,7 +96,7 @@ class Group:
         else:
             vals = vals[0]
 
-        return "".join((self.prefix, vals))
+        return f"{self.prefix}{vals}{self.suffix}"
 
 
 range_re = re.compile(r"^(\d+)\.\.(\d+)$")
@@ -120,8 +121,8 @@ class Range(Group):
             ovalues = [x.local_name for x in vals]
             rvalues = [str(x) for x in range(minrange, maxrange + 1)]
             if ovalues == rvalues:
-                return "%s{%d..%d}" % (self.prefix, minrange, maxrange)
-        return Group.__str__(self)
+                return f"{self.prefix}{{{minrange}..{maxrange}}}{self.suffix}"
+        return super().__str__()
 
 
 class PythonCompat:
@@ -135,8 +136,11 @@ class PythonCompat:
         # first, try adding to an existing group
         # longer groups come first, so that should be good enough
         for g in self.groups:
-            if impl_name.startswith(g.prefix):
-                value = Value(impl_name, impl_name[len(g.prefix):])
+            if impl_name.startswith(g.prefix) and impl_name.endswith(g.suffix):
+                value = Value(
+                    impl_name,
+                    impl_name.removeprefix(g.prefix).removesuffix(g.suffix),
+                )
                 if g.add_sorted(value):
                     return
 
@@ -177,7 +181,7 @@ class PythonCompat:
             v2 = Value(impl_name, suff2)
 
             i = self.nodes.index(v)
-            self.nodes[i] = Group(cpfx,
+            self.nodes[i] = Group(cpfx, "",
                                   sorted([v1, v2], key=lambda x: x.local_name))
             return
 
@@ -257,18 +261,15 @@ def parse_item(s):
     suffix = match.group("suffix")
 
     if range_start is not None:
-        if suffix != "":
-            raise NotImplementedError
         values = [
-            Value(f"{prefix}{x}", f"{x}")
+            Value(f"{prefix}{x}{suffix}", f"{x}")
             for x in range(int(range_start), int(range_end) + 1)
         ]
-        return Range(prefix, values)
+        return Range(prefix, suffix, values)
     elif match.group("groups") is not None:
-        if suffix != "":
-            raise NotImplementedError
         values = groups.split(",")
-        return Group(prefix, [Value(f"{prefix}{x}", x) for x in values])
+        return Group(prefix, suffix,
+                     [Value(f"{prefix}{x}{suffix}", x) for x in values])
 
     assert suffix is None
     return Value(prefix)
@@ -342,8 +343,16 @@ def add_impl(s, new):
     'python3_{12,13,13t}'
     >>> add_impl('python3_{12..13}', 'python3_13t')
     'python3_{12..13} python3_13t'
-    >>> add_impl('python3_13', 'python3_13t')  # TODO
+    >>> add_impl('python3_13', 'python3_13t')
     'python3_13 python3_13t'
+    >>> add_impl('python3_13 python3_13t', 'python3_14t')
+    'python3_13 python3_13t python3_14t'
+    >>> add_impl('python3_{10..13} python3_13t', 'python3_14t')  # TODO
+    'python3_{10..13} python3_1{3t,4t}'
+    >>> add_impl('python3_{10..13} python3_{13,14}t', 'python3_15t')
+    'python3_{10..13} python3_{13,14,15}t'
+    >>> add_impl('python3_{10..13} python3_{13..14}t', 'python3_15t')
+    'python3_{10..13} python3_{13..15}t'
     """
     pc = parse(s)
     pc.add(new)
@@ -400,6 +409,22 @@ def del_impl(s, old):
     'python3_13'
     >>> del_impl('python3_{13,13t}', 'python3_13')
     'python3_13t'
+    >>> del_impl('python3_{10..14} python3_{13,14}t', 'python3_10')
+    'python3_{11..14} python3_{13,14}t'
+    >>> del_impl('python3_{10..14} python3_{13..14}t', 'python3_10')
+    'python3_{11..14} python3_{13..14}t'
+    >>> del_impl('python3_{10..14} python3_{13,14}t', 'python3_13t')
+    'python3_{10..14} python3_14t'
+    >>> del_impl('python3_{10..14} python3_{13..14}t', 'python3_13t')
+    'python3_{10..14} python3_14t'
+    >>> del_impl('python3_{10..14} python3_{13,14,15}t', 'python3_13t')
+    'python3_{10..14} python3_{14,15}t'
+    >>> del_impl('python3_{10..14} python3_{13..15}t', 'python3_13t')
+    'python3_{10..14} python3_{14..15}t'
+    >>> del_impl('python3_{10..14} python3_{13,14,15}t', 'python3_14t')
+    'python3_{10..14} python3_{13,15}t'
+    >>> del_impl('python3_{10..14} python3_{13..15}t', 'python3_14t')
+    'python3_{10..14} python3_{13,15}t'
     """
     pc = parse(s)
     pc.remove(old)
