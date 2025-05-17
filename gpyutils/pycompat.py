@@ -2,6 +2,8 @@
 # (c) 2013-2025 Michał Górny <mgorny@gentoo.org>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+from __future__ import annotations
+
 import os
 import os.path
 import re
