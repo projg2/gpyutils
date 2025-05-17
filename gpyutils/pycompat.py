@@ -78,9 +78,14 @@ class Group:
 
     def add_sorted(self, v: str) -> bool:
         """Add value to the group and return True if it can be added"""
+        # only numeric values can be added to a range
         if self.is_range and not v.local_name.isdigit():
             return False
         self.values.insert(get_previous_val_index(self.values, v) + 1, v)
+        # try to opportunistically convert into a range
+        # (str() will check if it's contiguous)
+        if not self.is_range:
+            self.is_range = all(x.local_name.isdigit() for x in self.values)
         return True
 
     @property
@@ -96,7 +101,7 @@ class Group:
 
         if len(vals) > 1:
             if self.is_range:
-                # try a continuous range
+                # try a contiguous range
                 minrange = int(vals[0].local_name)
                 maxrange = int(vals[-1].local_name)
                 # lazy way of checking
@@ -301,7 +306,7 @@ def add_impl(s, new):
     >>> add_impl('python2_6 python2_7 python3_4 pypy1_9', 'python3_3')
     'python2_6 python2_7 python3_{3,4} pypy1_9'
     >>> add_impl('python2_{6,7} python3_{1,2}', 'python3_3')
-    'python2_{6,7} python3_{1,2,3}'
+    'python2_{6,7} python3_{1..3}'
     >>> add_impl('python2_{6,7} python3_2', 'python3_3')
     'python2_{6,7} python3_{2,3}'
     >>> add_impl('python2_{6,7} python3_4', 'python3_3')
@@ -339,7 +344,7 @@ def add_impl(s, new):
     >>> add_impl('python3_{10..13} python3_13t', 'python3_14t')
     'python3_{10..13} python3_{13,14}t'
     >>> add_impl('python3_{10..13} python3_{13,14}t', 'python3_15t')
-    'python3_{10..13} python3_{13,14,15}t'
+    'python3_{10..13} python3_{13..15}t'
     >>> add_impl('python3_{10..13} python3_{13..14}t', 'python3_15t')
     'python3_{10..13} python3_{13..15}t'
     >>> add_impl('python3_10', 'python3_11')
