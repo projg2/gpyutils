@@ -209,27 +209,17 @@ class PythonCompat:
 
     @property
     def groups(self):
-        def subiter(g):
-            for x in g:
-                if isinstance(x, Group):
-                    for y in subiter(x):
-                        yield y
-                    yield x
-
-        return subiter(self.nodes)
+        return (node for node in self.nodes if isinstance(node, Group))
 
     def __iter__(self):
-        def subiter(g):
-            for x in g:
-                if isinstance(x, Group):
-                    for y in subiter(x):
-                        if not y.removed:
-                            yield y
-                elif isinstance(x, Value):
-                    if not x.removed:
-                        yield x
-
-        return subiter(self.nodes)
+        for x in self.nodes:
+            if isinstance(x, Group):
+                for y in x:
+                    if not y.removed:
+                        yield y
+            elif isinstance(x, Value):
+                if not x.removed:
+                    yield x
 
     def __repr__(self):
         return repr(self.nodes)
