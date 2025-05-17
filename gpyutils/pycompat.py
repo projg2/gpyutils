@@ -59,7 +59,7 @@ def get_previous_val_index(values, v):
         elif isinstance(x, Value):
             return (0, x.local_name)
         else:
-            return (0, x.local_prefix)
+            return (0, x.prefix)
 
     sorted_values = sorted(values + [v], key=sort_key)
     idx = sorted_values.index(v)
@@ -71,8 +71,7 @@ def get_previous_val_index(values, v):
 
 @dataclass
 class Group:
-    full_prefix: str
-    local_prefix: str
+    prefix: str
     values: list[Value]
 
     def add_sorted(self, v: str) -> bool:
@@ -96,7 +95,7 @@ class Group:
         else:
             vals = vals[0]
 
-        return "".join((self.local_prefix, vals))
+        return "".join((self.prefix, vals))
 
 
 range_re = re.compile(r"^(\d+)\.\.(\d+)$")
@@ -110,7 +109,7 @@ class Range(Group):
         if m is None:
             raise ValueError(f"Invalid range: {self.values[0].local_name}")
         self.values = [
-            Value("".join((self.full_prefix, str(x))), str(x))
+            Value("".join((self.prefix, str(x))), str(x))
             for x in range(int(m.group(1)), int(m.group(2)) + 1)
         ]
 
@@ -131,7 +130,7 @@ class Range(Group):
             ovalues = [x.local_name for x in vals]
             rvalues = [str(x) for x in range(minrange, maxrange + 1)]
             if ovalues == rvalues:
-                return "%s{%d..%d}" % (self.local_prefix, minrange, maxrange)
+                return "%s{%d..%d}" % (self.prefix, minrange, maxrange)
         return Group.__str__(self)
 
 
@@ -146,8 +145,8 @@ class PythonCompat:
         # first, try adding to an existing group
         # longer groups come first, so that should be good enough
         for g in self.groups:
-            if impl_name.startswith(g.full_prefix):
-                value = Value(impl_name, impl_name[len(g.full_prefix):])
+            if impl_name.startswith(g.prefix):
+                value = Value(impl_name, impl_name[len(g.prefix):])
                 if g.add_sorted(value):
                     return
 
@@ -162,7 +161,7 @@ class PythonCompat:
                 continue
             # don't split mid-version if maintainer didn't do that already
             mid_ver_groups = [x for x in self.groups
-                              if x.local_prefix.endswith("_")]
+                              if x.prefix.endswith("_")]
             if cpfx[-1] == "_" and not any(mid_ver_groups):
                 continue
 
@@ -188,7 +187,7 @@ class PythonCompat:
             v2 = Value(impl_name, suff2)
 
             i = self.nodes.index(v)
-            self.nodes[i] = Group(cpfx, cpfx,
+            self.nodes[i] = Group(cpfx,
                                   sorted([v1, v2], key=lambda x: x.local_name))
             return
 
@@ -279,13 +278,12 @@ def parse_item(s):
     if range_ is not None:
         if suffix != "":
             raise NotImplementedError
-        return Range(prefix, prefix, [Value(f"{prefix}{range_}", range_)])
+        return Range(prefix, [Value(f"{prefix}{range_}", range_)])
     elif match.group("groups") is not None:
         if suffix != "":
             raise NotImplementedError
         values = groups.split(",")
-        return Group(prefix, prefix, [Value(f"{prefix}{x}", x)
-                                      for x in values])
+        return Group(prefix, [Value(f"{prefix}{x}", x) for x in values])
 
     assert suffix is None
     return Value(prefix)
