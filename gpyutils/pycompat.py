@@ -9,7 +9,6 @@ import os.path
 import re
 import shutil
 import tempfile
-
 from dataclasses import dataclass
 
 
@@ -98,27 +97,29 @@ class Group:
         for x in self.values:
             yield x
 
-    def __str__(self):
+    def _local_str(self) -> str:
         vals = [x for x in self.values if not x.removed]
 
-        if len(vals) > 1:
-            if self.is_range:
-                # try a contiguous range
-                minrange = int(vals[0].local_name)
-                maxrange = int(vals[-1].local_name)
-                # lazy way of checking
-                ovalues = [x.local_name for x in vals]
-                rvalues = [str(x) for x in range(minrange, maxrange + 1)]
-                if ovalues == rvalues:
-                    return f"{self.prefix}{{{minrange}..{maxrange}}}{self.suffix}"
-            vals = f"{{{','.join(str(x) for x in vals)}}}"
-        else:
-            vals = vals[0]
+        assert len(vals) > 0
+        if len(vals) == 1:
+            return vals[0]
 
-        return f"{self.prefix}{vals}{self.suffix}"
+        if self.is_range:
+            # try a contiguous range
+            minrange = int(vals[0].local_name)
+            maxrange = int(vals[-1].local_name)
+            # lazy way of checking
+            ovalues = [x.local_name for x in vals]
+            rvalues = [str(x) for x in range(minrange, maxrange + 1)]
+            if ovalues == rvalues:
+                return f"{{{minrange}..{maxrange}}}"
+        return f"{{{','.join(str(x) for x in vals)}}}"
+
+    def __str__(self):
+        return f"{self.prefix}{self._local_str()}{self.suffix}"
 
 
-new_split_re = re.compile("(?P<mid> \d+) (?P<suffix> .*)", re.VERBOSE)
+new_split_re = re.compile(r"(?P<mid> \d+) (?P<suffix> .*)", re.VERBOSE)
 
 
 class PythonCompat:
@@ -245,7 +246,7 @@ pycompat_re = re.compile(
     r"  (?P<suffix> \w*)"
     r")?"
     ,
-    re.VERBOSE
+    re.VERBOSE,
 )
 
 
