@@ -15,7 +15,7 @@ import lxml.etree
 
 @dataclasses.dataclass(frozen=True, order=True)
 class TestCase:
-    class_ref: str
+    class_ref: str | None
     name: str | None
     path: str
     failed: bool
@@ -45,6 +45,8 @@ class TestCase:
     @property
     def class_name(self) -> str | None:
         """Pure class name or None if global function"""
+        if self.class_ref is None:
+            return None
         stripped = self.class_ref.removeprefix(self.import_name)
         if not stripped:
             return None
@@ -73,6 +75,25 @@ class TestCase:
                               name=self.base_name,
                               path=self.path,
                               failed=self.failed)
+
+
+def combine_files(failing_tests: list[TestCase],
+                  all_tests: set[TestCase],
+                  ) -> typing.Generator[TestCase, None, None]:
+    for path, group in itertools.groupby(
+        failing_tests, key=lambda x: x.path,
+    ):
+        items = list(group)
+        if all(
+            x.failed for x in all_tests
+            if x.path == path
+        ):
+            yield TestCase(class_ref=None,
+                           name=None,
+                           path=items[0].path,
+                           failed=items[0].failed)
+            continue
+        yield from items
 
 
 def combine_classes(failing_tests: list[TestCase],
@@ -119,7 +140,10 @@ def main(prog_name: str, *argv: str) -> int:
                       help="junit xml file to process")
     argp.add_argument("--no-combine-classes",
                       action="store_true",
-                      help="Disable combining test classes if all fail")
+                      help="Disable combining test classes if all tests fail")
+    argp.add_argument("--no-combine-files",
+                      action="store_true",
+                      help="Disable combining test files if all tests fail")
     argp.add_argument("--no-combine-parameters",
                       action="store_true",
                       help="Disable combining parametrized tests if all fail")
@@ -133,6 +157,8 @@ def main(prog_name: str, *argv: str) -> int:
         print("All tests failed!", file=sys.stderr)
         return 1
 
+    if not args.no_combine_files:
+        failing_tests = list(combine_files(failing_tests, all_tests))
     if not args.no_combine_classes:
         failing_tests = list(combine_classes(failing_tests, all_tests))
     if not args.no_combine_parameters:
