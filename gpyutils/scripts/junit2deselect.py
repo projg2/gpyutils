@@ -20,7 +20,7 @@ class TestCase:
     path: str
 
     @classmethod
-    def from_xml(cls, testcase: lxml.Element) -> typing.Self:
+    def from_xml(cls, testcase: lxml.etree.Element) -> typing.Self:
         classname = testcase.get("classname")
         name = testcase.get("name")
         if classname is None or name is None:
@@ -66,14 +66,14 @@ class TestCase:
         return self.name.split("[", 1)[0]
 
     def without_parameters(self) -> typing.Self:
-        return TestCase(class_ref=self.class_ref,
-                        name=self.base_name,
-                        path=self.path)
+        return self.__class__(class_ref=self.class_ref,
+                              name=self.base_name,
+                              path=self.path)
 
 
 def combine_parameters(failing_tests: list[TestCase],
-                       test_xml: lxml.Document,
-                       ) -> typing.Generator[TestCase]:
+                       test_xml: lxml.etree._ElementTree,
+                       ) -> typing.Generator[TestCase, None, None]:
     for base_test, group in itertools.groupby(
         failing_tests, key=lambda x: x.without_parameters()
     ):
