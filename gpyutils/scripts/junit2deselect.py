@@ -83,17 +83,17 @@ def combine_files(failing_tests: list[TestCase],
     for path, group in itertools.groupby(
         failing_tests, key=lambda x: x.path,
     ):
-        items = list(group)
         if all(
             x.failed for x in all_tests
             if x.path == path
         ):
+            first = next(group)
             yield TestCase(class_ref=None,
                            name=None,
-                           path=items[0].path,
-                           failed=items[0].failed)
+                           path=first.path,
+                           failed=first.failed)
             continue
-        yield from items
+        yield from group
 
 
 def combine_classes(failing_tests: list[TestCase],
@@ -102,15 +102,15 @@ def combine_classes(failing_tests: list[TestCase],
     for class_ref, group in itertools.groupby(
         failing_tests, key=lambda x: x.class_ref,
     ):
-        items = list(group)
         if all(
             x.failed for x in all_tests
             if x.class_ref == class_ref
         ):
-            yield TestCase(class_ref=items[0].class_ref,
+            first = next(group)
+            yield TestCase(class_ref=first.class_ref,
                            name=None,
-                           path=items[0].path,
-                           failed=items[0].failed)
+                           path=first.path,
+                           failed=first.failed)
             continue
         yield from items
 
