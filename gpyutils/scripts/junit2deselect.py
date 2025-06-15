@@ -5,6 +5,7 @@
 
 import argparse
 import dataclasses
+import itertools
 import os
 import sys
 import typing
@@ -55,6 +56,38 @@ class TestCase:
         else:
             return f"{self.path}::{self.name}"
 
+    @property
+    def is_parametrized(self) -> bool:
+        return "[" in self.name
+
+    @property
+    def base_name(self) -> str:
+        """Test name without parameters"""
+        return self.name.split("[", 1)[0]
+
+    def without_parameters(self) -> typing.Self:
+        return TestCase(class_ref=self.class_ref,
+                        name=self.base_name,
+                        path=self.path)
+
+
+def combine_parameters(failing_tests: list[TestCase],
+                       test_xml: lxml.Document,
+                       ) -> typing.Generator[TestCase]:
+    for base_test, group in itertools.groupby(
+        failing_tests, key=lambda x: x.without_parameters()
+    ):
+        items = list(group)
+        if items[0].is_parametrized:
+            # find all tests with the same base name
+            all_matching = test_xml.xpath(
+                f"//testcase[@classname={base_test.class_ref!r} and "
+                f"starts-with(@name, {base_test.name + '['!r})]")
+            if len(all_matching) == len(items):
+                yield base_test
+                continue
+        yield from items
+
 
 def main(prog_name: str, *argv: str) -> int:
     argp = argparse.ArgumentParser(prog=prog_name)
@@ -62,12 +95,18 @@ def main(prog_name: str, *argv: str) -> int:
                       type=lambda x: lxml.etree.parse(x),
                       metavar="file.xml",
                       help="junit xml file to process")
+    argp.add_argument("--no-combine-parameters",
+                      action="store_true",
+                      help="Disable combining parametrizing tests if all fail")
     args = argp.parse_args(argv)
 
     failing_tests = sorted(set([
         TestCase.from_xml(testcase)
         for testcase in args.xml.xpath("//testcase[failure|error]")
     ]))
+
+    if not args.no_combine_parameters:
+        failing_tests = list(combine_parameters(failing_tests, args.xml))
 
     print("EPYTEST_DESELECT=(")
     for test in failing_tests:
