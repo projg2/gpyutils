@@ -16,7 +16,7 @@ import lxml.etree
 @dataclasses.dataclass(frozen=True, order=True)
 class TestCase:
     class_ref: str
-    name: str
+    name: str | None
     path: str
     failed: bool
 
@@ -54,19 +54,18 @@ class TestCase:
 
     @property
     def pytest_selector(self) -> str:
-        class_name = self.class_name
-        if class_name is not None:
-            return f"{self.path}::{class_name}::{self.name}"
-        else:
-            return f"{self.path}::{self.name}"
+        return "::".join(filter(lambda x: x is not None,
+                                (self.path, self.class_name, self.name)))
 
     @property
     def is_parametrized(self) -> bool:
-        return "[" in self.name
+        return self.name is not None and "[" in self.name
 
     @property
     def base_name(self) -> str:
         """Test name without parameters"""
+        if self.name is None:
+            return None
         return self.name.split("[", 1)[0]
 
     def without_parameters(self) -> typing.Self:
@@ -74,6 +73,25 @@ class TestCase:
                               name=self.base_name,
                               path=self.path,
                               failed=self.failed)
+
+
+def combine_classes(failing_tests: list[TestCase],
+                    all_tests: set[TestCase],
+                    ) -> typing.Generator[TestCase, None, None]:
+    for class_ref, group in itertools.groupby(
+        failing_tests, key=lambda x: x.class_ref,
+    ):
+        items = list(group)
+        if all(
+            x.failed for x in all_tests
+            if x.class_ref == class_ref
+        ):
+            yield TestCase(class_ref=items[0].class_ref,
+                           name=None,
+                           path=items[0].path,
+                           failed=items[0].failed)
+            continue
+        yield from items
 
 
 def combine_parameters(failing_tests: list[TestCase],
@@ -99,9 +117,12 @@ def main(prog_name: str, *argv: str) -> int:
                       type=lambda x: lxml.etree.parse(x),
                       metavar="file.xml",
                       help="junit xml file to process")
+    argp.add_argument("--no-combine-classes",
+                      action="store_true",
+                      help="Disable combining test classes if all fail")
     argp.add_argument("--no-combine-parameters",
                       action="store_true",
-                      help="Disable combining parametrizing tests if all fail")
+                      help="Disable combining parametrized tests if all fail")
     args = argp.parse_args(argv)
 
     all_tests = {TestCase.from_xml(testcase)
@@ -112,6 +133,8 @@ def main(prog_name: str, *argv: str) -> int:
         print("All tests failed!", file=sys.stderr)
         return 1
 
+    if not args.no_combine_classes:
+        failing_tests = list(combine_classes(failing_tests, all_tests))
     if not args.no_combine_parameters:
         failing_tests = list(combine_parameters(failing_tests, all_tests))
 
