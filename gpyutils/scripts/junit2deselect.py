@@ -75,7 +75,7 @@ def combine_parameters(failing_tests: list[TestCase],
                        test_xml: lxml.etree._ElementTree,
                        ) -> typing.Generator[TestCase, None, None]:
     for base_test, group in itertools.groupby(
-        failing_tests, key=lambda x: x.without_parameters()
+        failing_tests, key=lambda x: x.without_parameters(),
     ):
         items = list(group)
         if items[0].is_parametrized:
@@ -100,10 +100,10 @@ def main(prog_name: str, *argv: str) -> int:
                       help="Disable combining parametrizing tests if all fail")
     args = argp.parse_args(argv)
 
-    failing_tests = sorted(set([
+    failing_tests = sorted({
         TestCase.from_xml(testcase)
         for testcase in args.xml.xpath("//testcase[failure|error]")
-    ]))
+    })
 
     if not args.no_combine_parameters:
         failing_tests = list(combine_parameters(failing_tests, args.xml))
