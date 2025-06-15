@@ -12,7 +12,7 @@ import typing
 import lxml.etree
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, order=True)
 class TestCase:
     class_ref: str
     name: str
@@ -64,10 +64,10 @@ def main(prog_name: str, *argv: str) -> int:
                       help="junit xml file to process")
     args = argp.parse_args(argv)
 
-    failing_tests = [
+    failing_tests = sorted(set([
         TestCase.from_xml(testcase)
         for testcase in args.xml.xpath("//testcase[failure|error]")
-    ]
+    ]))
 
     print("EPYTEST_DESELECT=(")
     for test in failing_tests:
