@@ -18,6 +18,7 @@ class TestCase:
     class_ref: str
     name: str
     path: str
+    failed: bool
 
     @classmethod
     def from_xml(cls, testcase: lxml.etree.Element) -> typing.Self:
@@ -27,11 +28,14 @@ class TestCase:
             raise RuntimeError(
                 "classname or name is missing on <testcase/>, "
                 "invalid junit xml file")
+
         path = testcase.get("file")
         if path is None:
             raise RuntimeError(
                 "path is missing on <testcase/>, not an xunit1 format file")
-        return cls(class_ref=classname, name=name, path=path)
+
+        failed = any(child.tag in ("failure", "error") for child in testcase)
+        return cls(class_ref=classname, name=name, path=path, failed=failed)
 
     @property
     def import_name(self) -> str:
@@ -68,24 +72,24 @@ class TestCase:
     def without_parameters(self) -> typing.Self:
         return self.__class__(class_ref=self.class_ref,
                               name=self.base_name,
-                              path=self.path)
+                              path=self.path,
+                              failed=self.failed)
 
 
 def combine_parameters(failing_tests: list[TestCase],
-                       test_xml: lxml.etree._ElementTree,
+                       all_tests: set[TestCase],
                        ) -> typing.Generator[TestCase, None, None]:
     for base_test, group in itertools.groupby(
         failing_tests, key=lambda x: x.without_parameters(),
     ):
         items = list(group)
-        if items[0].is_parametrized:
-            # find all tests with the same base name
-            all_matching = test_xml.xpath(
-                f"//testcase[@classname={base_test.class_ref!r} and "
-                f"starts-with(@name, {base_test.name + '['!r})]")
-            if len(all_matching) == len(items):
-                yield base_test
-                continue
+        if items[0].is_parametrized and all(
+            x.failed for x in all_tests
+            if x.class_ref == base_test.class_ref
+            and x.base_name == base_test.base_name
+        ):
+            yield base_test
+            continue
         yield from items
 
 
@@ -100,13 +104,16 @@ def main(prog_name: str, *argv: str) -> int:
                       help="Disable combining parametrizing tests if all fail")
     args = argp.parse_args(argv)
 
-    failing_tests = sorted({
-        TestCase.from_xml(testcase)
-        for testcase in args.xml.xpath("//testcase[failure|error]")
-    })
+    all_tests = {TestCase.from_xml(testcase)
+                 for testcase in args.xml.xpath("//testcase")}
+    failing_tests = sorted(filter(lambda x: x.failed, all_tests))
+
+    if len(all_tests) == len(failing_tests):
+        print("All tests failed!", file=sys.stderr)
+        return 1
 
     if not args.no_combine_parameters:
-        failing_tests = list(combine_parameters(failing_tests, args.xml))
+        failing_tests = list(combine_parameters(failing_tests, all_tests))
 
     print("EPYTEST_DESELECT=(")
     for test in failing_tests:
