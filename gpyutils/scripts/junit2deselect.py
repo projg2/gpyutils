@@ -112,7 +112,7 @@ def combine_classes(failing_tests: list[TestCase],
                            path=first.path,
                            failed=first.failed)
             continue
-        yield from items
+        yield from group
 
 
 def combine_parameters(failing_tests: list[TestCase],
